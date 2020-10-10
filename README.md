@@ -46,11 +46,11 @@ Uses ofxSurfing_CaptureWindowFFMPEG.h
 ![image](/readme_images/Capture4.PNG?raw=true "image")
 
 ## Features
-- **Faster** than other alternatives that capture video.
+- **Faster** than other alternatives that capture vide (not "raw" still frames).
 - **User controls** to handle all the capture workflow:  
 1. **Mount** (F8)  
 2. **Record** (F9)  
-3. Take **Snapshot** (F10)  
+3. Take **PNG Snapshot** (F10)  
 4. **Clear** all stills (Ctrl+Alt+BackSpace)
 5. **Auto-call batch FFmpeg** *stills_to_video* compression after capture (F11),  
 auto-opens video with your video player.
@@ -73,7 +73,9 @@ ofApp::setup(){
 
 ofApp::draw(){
 	capturer.begin();
-	// draw your scene here //
+
+	///----- draw your scene here -----///
+	
 	capturer.end();
 
 	capturer.draw();
@@ -91,9 +93,10 @@ https://github.com/gallagher-tech/ofxFFmpegRecorder.git
 https://github.com/NickHardeman/ofxFastFboReader.git  
 
 ## Notes
-- Includes some **FFmpeg** scripts and links.
-- To batch-join stills to video requires your own **ffmpeg.exe**.
+- Includes some **FFmpeg** scripts, links and a Windows compiled *ffmpeg.exe*.
+- To batch-join stills (.tif) to video (.mp4) requires your own **ffmpeg.exe** binary.
 - TODO: Should improve data path...
+- TODO: Check I window resize don't breaks Fbo capturer size... 
 
 ## Tested systems
 - **Windows10** / **VS2017** / **OF 0.11**
