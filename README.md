@@ -33,12 +33,13 @@ Uses ofxSurfing_CaptureWindowFFMPEG.h
 
 ## Features
 - **Faster** than other alternatives that capture video.
-- **User controls** to handle all the proccess:  
+- **User controls** to handle all the capture workflow:  
 Mount (F8)  
 Record (F9)  
 Take snapshot (F10)  
 Clear all stills (Ctrl+Alt+BackSpace)
-- Command (F11) to **auto-call ffmpeg** batch stills_to_video compression after capture and opens the video player.
+**Auto-call ffmpeg** batch *stills_to_video* compression after capture (F11),  
+auto-opens video with your video player.
 
 ## Usage
  
@@ -77,7 +78,7 @@ https://github.com/NickHardeman/ofxFastFboReader.git
 
 ## Notes
 - Includes some **ffmpeg** scripts and links.
-- To batch-join stills to video requires **ffmpeg.exe**.
+- To batch-join stills to video requires your own **ffmpeg.exe**.
 - TODO: Should improve data path...
 
 ## Tested systems
