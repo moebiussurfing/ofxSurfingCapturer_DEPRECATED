@@ -2,7 +2,7 @@ ofxSurfingCapturer
 =============================
 
 # Overview
-**ofxSurfingCapturer** is an **openFrameworks** addon to do *fast video capturing* but storing **still frames** to join to video with *ffmpeg*. It helps on all the capture workflow. 
+**ofxSurfingCapturer** is an **openFrameworks** addon to do *fast video capturing* but storing **still frames** to join to video with *FFmpeg*. It helps on all the capture workflow. 
 
 # Two alternatives
 Includes **two** different **independent** classes:  
@@ -34,11 +34,11 @@ Uses ofxSurfing_CaptureWindowFFMPEG.h
 ## Features
 - **Faster** than other alternatives that capture video.
 - **User controls** to handle all the capture workflow:  
-1. Mount (F8)  
-2. Record (F9)  
-3. Take snapshot (F10)  
-4. Clear all stills (Ctrl+Alt+BackSpace)
-5. **Auto-call batch ffmpeg** *stills_to_video* compression after capture (F11),  
+1. **Mount** (F8)  
+2. **Record** (F9)  
+3. Take **Snapshot** (F10)  
+4. **Clear** all stills (Ctrl+Alt+BackSpace)
+5. **Auto-call batch FFmpeg** *stills_to_video* compression after capture (F11),  
 auto-opens video with your video player.
 
 ## Usage
@@ -77,7 +77,7 @@ https://github.com/gallagher-tech/ofxFFmpegRecorder.git
 https://github.com/NickHardeman/ofxFastFboReader.git  
 
 ## Notes
-- Includes some **ffmpeg** scripts and links.
+- Includes some **FFmpeg** scripts and links.
 - To batch-join stills to video requires your own **ffmpeg.exe**.
 - TODO: Should improve data path...
 
