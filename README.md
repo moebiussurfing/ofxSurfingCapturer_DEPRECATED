@@ -86,7 +86,10 @@ https://github.com/NickHardeman/ofxFastFboReader.git
 
 ## Author
 Addon by **@moebiusSurfing**  
-*(ManuMolina). 2020.*
+*(ManuMolina). 2020.*  
+
+Thanks to the coders of the above original addons:  
+**NickHardeman** and **arturoc**.  
 
 ## License
 *MIT License.*
