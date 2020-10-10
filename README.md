@@ -6,6 +6,8 @@ ofxAddonTemplateCustomApp
 
 ## Screenshot
 ![image](/readme_images/Capture1.PNG?raw=true "image")
+![image](/readme_images/Capture2.PNG?raw=true "image")
+![image](/readme_images/Capture3.PNG?raw=true "image")
 
 ## Features
 - Customize gui.

@@ -6,6 +6,8 @@
 
 ## can exclude some sttings files
 
+*.tif
+
 #*.XML
 #*.xml
 #*.JSON

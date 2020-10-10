@@ -14,4 +14,10 @@ class ofApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		
 		CaptureWindow capturer;
+
+		//scene
+		glm::vec2 pos;
+		int halfx, halfy;
+		float size;
+		float val;
 };

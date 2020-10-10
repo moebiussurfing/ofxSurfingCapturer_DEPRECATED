@@ -19,91 +19,6 @@ class CaptureWindow : public ofBaseApp, public ofThread
 
 public:
 
-	// join all stills to a video file
-	//--------------------------------------------------------------
-	void threadedFunction() {
-		ofLogWarning(__FUNCTION__) << " Must run as Adniministrator!" << endl;
-		cout << (__FUNCTION__) << " Must run as Adniministrator!" << endl;
-
-		////while (isThreadRunning()) {
-		if (isThreadRunning())
-		{
-			// build ffmpeg command
-
-			cout << "> Starting join all stills to a video file " << endl;
-
-			// template to join stills
-			// ffmpeg -r 60 -f image2 -s 1920x1080 -i %05d.tif -c:v libx264 -preset veryslow -qp 0 output.mp4 // lossless
-
-			stringstream cmd;
-			stringstream ffmpeg;
-			stringstream filesSrc;
-			stringstream pathDest;
-			stringstream nameDest;
-			stringstream fileOut;
-			stringstream pathAppData;
-
-			pathAppData << "F:\\openFrameworks\\apps\\20\\CovidBCN-02\\bin\\data\\";
-
-			ffmpeg << pathAppData.str().c_str() << _pathFolderRoot << "ffmpeg.exe";
-
-			pathDest << pathAppData.str().c_str() << _pathFolderRoot;
-			filesSrc << pathAppData.str().c_str() << _pathFolderStills << "%05d.tif"; // data/stills/%05d.tif
-			nameDest << "output_" << ofGetTimestampString() << ".mp4"; // "output.mp4";
-			fileOut << pathDest.str().c_str() << nameDest;
-
-			// command:
-			cmd << ffmpeg << " -r 60 -f image2 -s 1920x1080 -i " << filesSrc << " -c:v libx264 -preset veryslow -qp 0 " << fileOut;
-
-			cout << endl << endl;
-			cout << "ffmpeg : " << ffmpeg.str().c_str();
-			cout << endl << endl;
-			cout << "Source : " << filesSrc.str().c_str();
-			cout << endl << endl;
-			cout << "Out    : " << fileOut.str().c_str();
-			cout << endl << endl;
-			cout << "Command: " << cmd.str().c_str();
-			cout << endl << endl;
-
-			// run
-			cout << ofSystem(cmd.str().c_str()) << endl;
-
-			//-
-
-			// loop repeat if above while
-			//ofSleepMillis(5000);
-			//cout << "repeat" << endl;
-
-			cout << endl;
-			cout << "> Done video encoding into: " << fileOut.str().c_str();
-			cout << endl;
-
-			//-
-
-			// open video
-			cout << ofSystem(fileOut.str().c_str()) << endl;
-
-			//--
-
-			// some examples
-
-			//cout << ofSystem("cd data\\") << endl;
-			//cout << ofSystem("dir") << endl;
-			//cout << ofSystem("cd captures") << endl;
-			//cout << ofSystem("dir") << endl;
-
-			//stringstream someCmd;
-			//someCmd.clear();
-			//someCmd << "dir";
-			//cout << someCmd << endl;
-			//cout << ofSystem(someCmd.str().c_str()) << endl;
-
-			//-
-
-		}
-		//else waitForThread(true);
-	}
-
 	//--------------------------------------------------------------
 	void doBuildFFmpeg() {
 		ofLogWarning(__FUNCTION__) << " to: " << _pathFolderStills;
@@ -228,8 +143,8 @@ public:
 	void buildRecorder() {
 		ofLogWarning(__FUNCTION__);
 
-		recorder.stop();// TODO: trying to allo resize..
-		
+		//recorder.stop();// TODO: trying to allo resize..
+
 		ofxTextureRecorder::Settings settings(cap_Fbo.getTexture());
 		settings.imageFormat = stillFormat;
 
@@ -291,24 +206,21 @@ public:
 	void drawInfo() {///draw the gui info if desired
 
 		if (bShowInfo && bActive) {
-
 			int x = 40;
 			int y = ofGetHeight() - 300;
+			string str = "\n\n";
 
 			//--
 
 			if (bRecPrepared || bRecording || isThreadRunning())
 			{
 				//cap info
-				string str = "";
 				str += "FPS " + ofToString(ofGetFrameRate(), 0) + "   " + ofToString(recorder.getFrame()) + " frames"; str += +"\n";
 				str += "WINDOW   " + ofToString(ofGetWidth()) + "x" + ofToString(ofGetHeight()); str += +"\n";
 				str += "FBO SIZE " + ofToString(cap_w) + "x" + ofToString(cap_h); str += +"\n";
 				str += "RECORDER " + ofToString(recorder.getWidth()) + "x" + ofToString(recorder.getHeight());
 				str += +"\n"; str += +"\n";
 
-				//draw red circle and info when recording
-				ofPushStyle();
 
 				if (bRecording)
 				{
@@ -319,18 +231,12 @@ public:
 					if (bRecording) {
 						if (recorder.getAvgTimeSave() == 0) {
 							std::string ss;
-							const int p = 30;//period in frames
+							const int p = 30;//blink period in frames
 							int fn = ofGetFrameNum() % p;
-							if (fn < p / 2.f)
-								ss = "ERROR RECORDING!";
-							else ss = "                ";
+							if (fn < p / 2) ss = "ERROR RECORDING!";
+							else ss = "";
 							str += ss + "\n";
-							//y += 20;
 						}
-
-						//info
-						ofDrawBitmapStringHighlight(str, x, y);
-						y += 20;
 					}
 				}
 				else if (bRecPrepared || isThreadRunning())
@@ -351,45 +257,12 @@ public:
 					if (b2) sp += ".";
 
 					if (isThreadRunning()) { str += "BUILDING STILLS TO VIDEO" + sp; str += "\n"; }
-					else str += "MOUNTED > READY" + sp; str += "\n";
-
-					//info
-					ofDrawBitmapStringHighlight(str, x, y);
-					y += 20;
-				}
-
-				//-
-
-				//red circle
-				int yy = y + 90;
-				if (!isThreadRunning()) {
-					if (bRecording)
-					{
-						ofFill();
-						ofSetColor(ofColor::red);
-						ofDrawCircle(ofPoint(x + 8, yy), 8);
-						ofNoFill();
-						ofSetLineWidth(2.f);
-						ofSetColor(ofColor::black);
-						ofDrawCircle(ofPoint(x + 8, yy), 8);
-						yy += 28;
-					}
-					else if (bRecPrepared)
-					{
-						if (ofGetFrameNum() % 60 < 20) {
-							ofFill();
-							ofSetColor(ofColor::red);
-							ofDrawCircle(ofPoint(x + 8, yy), 8);
-						}
-						ofNoFill();
-						ofSetLineWidth(2.f);
-						ofSetColor(ofColor::black);
-						ofDrawCircle(ofPoint(x + 8, yy), 8);
-						yy += 28;
+					else {
+						str += "> MOUNTED! READY" + sp; str += "\n";
+						if (b1 || b2) { str += "> PRESS F9 TO START CAPTURE"; }
+						str += "\n";
 					}
 				}
-
-				ofPopStyle();
 			}
 
 			//-
@@ -397,8 +270,6 @@ public:
 			// press F8
 			else if (!bRecPrepared && !isThreadRunning() && !bRecording)
 			{
-				string str = "";
-				str += "\n\n\n\n\n\n";
 				str += "F8 : MOUNT Recorder"; str += "\n";
 
 				//animated points..
@@ -414,37 +285,69 @@ public:
 				if (b2) sp += ".";
 
 				str += "> PRESS F8" + sp; str += "\n";
-
-				//info
-
-				ofDrawBitmapStringHighlight(str, x, y);
-				y += 20;
 			}
 
 			//-
 
-			//help
-			y = y + 120;
-			drawHelp(x, y);
-		}
-	}
+			//draw
+			str += info;
+			ofDrawBitmapStringHighlight(str, x, y);
 
-	//--------------------------------------------------------------
-	void drawHelp(int x = 50, int y = 50) {
-		// help info
-		ofDrawBitmapStringHighlight(info, x, y);
+			//-
 
-		if (bRecording)
-		{
-			if (ofGetFrameNum() % 60 == 0) {
-				ofLogWarning(__FUNCTION__) << ofGetFrameRate();
-				ofLogWarning(__FUNCTION__) << "texture copy: " << recorder.getAvgTimeTextureCopy();
-				ofLogWarning(__FUNCTION__) << "gpu download: " << recorder.getAvgTimeGpuDownload();
-				ofLogWarning(__FUNCTION__) << "image encoding: " << recorder.getAvgTimeEncode();
-				ofLogWarning(__FUNCTION__) << "file save: " << recorder.getAvgTimeSave() << endl;
+			//red circle
+
+			int yy = y;
+			if (!isThreadRunning()) {
+				ofPushStyle();
+				if (bRecording)
+				{
+					ofFill();
+					ofSetColor(ofColor::red);
+					ofDrawCircle(ofPoint(x + 8, yy), 8);
+					ofNoFill();
+					ofSetLineWidth(2.f);
+					ofSetColor(ofColor::black);
+					ofDrawCircle(ofPoint(x + 8, yy), 8);
+				}
+				else if (bRecPrepared)
+				{
+					if (ofGetFrameNum() % 60 < 20) {
+						ofFill();
+						ofSetColor(ofColor::red);
+						ofDrawCircle(ofPoint(x + 8, yy), 8);
+					}
+					ofNoFill();
+					ofSetLineWidth(2.f);
+					ofSetColor(ofColor::black);
+					ofDrawCircle(ofPoint(x + 8, yy), 8);
+				}
+				ofPopStyle();
+			}
+
+
+			//-
+
+			// log
+			if (bRecording)
+			{
+				if (ofGetFrameNum() % 60 == 0) {
+					ofLogWarning(__FUNCTION__) << ofGetFrameRate();
+					ofLogWarning(__FUNCTION__) << "texture copy: " << recorder.getAvgTimeTextureCopy();
+					ofLogWarning(__FUNCTION__) << "gpu download: " << recorder.getAvgTimeGpuDownload();
+					ofLogWarning(__FUNCTION__) << "image encoding: " << recorder.getAvgTimeEncode();
+					ofLogWarning(__FUNCTION__) << "file save: " << recorder.getAvgTimeSave() << endl;
+				}
 			}
 		}
 	}
+
+	////--------------------------------------------------------------
+	//void drawHelp(int x = 50, int y = 50) {
+	//	// help info
+	//	ofDrawBitmapStringHighlight(info, x, y);
+
+	//}
 
 	//--------------------------------------------------------------
 	void keyPressed(ofKeyEventArgs &eventArgs) {///to received short keys control commands
@@ -574,7 +477,7 @@ private:
 	void buildInfo() {///must be called after bitrate, framerate and size w/h are setted
 
 		//build help info
-		info = "";
+		info = "\n";
 		info += "HELP KEYS"; info += "\n";
 		info += "h  : Show Help info"; info += "\n";
 		info += "F5 : Set FullHD size"; info += "\n";
@@ -584,8 +487,93 @@ private:
 		info += "F9 : Start Recording"; info += "\n";
 		info += "F10: Capture Screenshot"; info += "\n";
 		info += "F11: Join Stills to video"; info += "\n";
-		info += "Ctrl+Alt+BackSpace: Clear Stills"; info += "\n";
+		info += "Ctrl+Alt+BackSpace: Clear Stills ";// info += "\n";
 		//info += "path Stills     : "+ _pathFolderStills; info += "\n";
 		//info += "path Screenshots: "+ _pathFolderSnapshots; info += "\n";
+	}
+
+	// join all stills to a video file
+	//--------------------------------------------------------------
+	void threadedFunction() {
+		ofLogWarning(__FUNCTION__) << " Must run as Adniministrator!" << endl;
+		cout << (__FUNCTION__) << " Must run as Adniministrator!" << endl;
+
+		////while (isThreadRunning()) {
+		if (isThreadRunning())
+		{
+			// build ffmpeg command
+
+			cout << "> Starting join all stills to a video file " << endl;
+
+			// template to join stills
+			// ffmpeg -r 60 -f image2 -s 1920x1080 -i %05d.tif -c:v libx264 -preset veryslow -qp 0 output.mp4 // lossless
+
+			stringstream cmd;
+			stringstream ffmpeg;
+			stringstream filesSrc;
+			stringstream pathDest;
+			stringstream nameDest;
+			stringstream fileOut;
+			stringstream pathAppData;
+
+			pathAppData << "F:\\openFrameworks\\apps\\20\\CovidBCN-02\\bin\\data\\";
+
+			ffmpeg << pathAppData.str().c_str() << _pathFolderRoot << "ffmpeg.exe";
+
+			pathDest << pathAppData.str().c_str() << _pathFolderRoot;
+			filesSrc << pathAppData.str().c_str() << _pathFolderStills << "%05d.tif"; // data/stills/%05d.tif
+			nameDest << "output_" << ofGetTimestampString() << ".mp4"; // "output.mp4";
+			fileOut << pathDest.str().c_str() << nameDest;
+
+			// command:
+			cmd << ffmpeg << " -r 60 -f image2 -s 1920x1080 -i " << filesSrc << " -c:v libx264 -preset veryslow -qp 0 " << fileOut;
+
+			cout << endl << endl;
+			cout << "ffmpeg : " << ffmpeg.str().c_str();
+			cout << endl << endl;
+			cout << "Source : " << filesSrc.str().c_str();
+			cout << endl << endl;
+			cout << "Out    : " << fileOut.str().c_str();
+			cout << endl << endl;
+			cout << "Command: " << cmd.str().c_str();
+			cout << endl << endl;
+
+			// run
+			cout << ofSystem(cmd.str().c_str()) << endl;
+
+			//-
+
+			// loop repeat if above while
+			//ofSleepMillis(5000);
+			//cout << "repeat" << endl;
+
+			cout << endl;
+			cout << "> Done video encoding into: " << fileOut.str().c_str();
+			cout << endl;
+
+			//-
+
+			// open video
+			cout << ofSystem(fileOut.str().c_str()) << endl;
+
+			//--
+
+			// some examples
+
+			//cout << ofSystem("cd data\\") << endl;
+			//cout << ofSystem("dir") << endl;
+			//cout << ofSystem("cd captures") << endl;
+			//cout << ofSystem("dir") << endl;
+
+			//stringstream someCmd;
+			//someCmd.clear();
+			//someCmd << "dir";
+			//cout << someCmd << endl;
+			//cout << ofSystem(someCmd.str().c_str()) << endl;
+
+			//-
+
+		}
+		//else waitForThread(true);
 	}
 };
