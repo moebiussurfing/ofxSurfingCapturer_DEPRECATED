@@ -14,7 +14,7 @@ void ofApp::setup() {
 	capturer.setup(); // customizable using setup("destination\\", OF_IMAGE_FORMAT_PNG);
 
 	capturer.setActive(true);
-	capturer.setVisibleInfo(true);
+	//capturer.setVisibleInfo(true);
 }
 
 //--------------------------------------------------------------
