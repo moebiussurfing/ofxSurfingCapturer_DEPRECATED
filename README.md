@@ -19,8 +19,14 @@ Based on: **ofxFFmpegRecorder** and **ofxFastFboReader**.
 
 ### 1. example-BasicStills:
 Uses ofxSurfing_CaptureWindowStills.h  
-![image](/readme_images/Capture1.PNG?raw=true "image")
-![image](/readme_images/Capture2.PNG?raw=true "image")
+**HOW TO:**  
+1. F8 > Mounts the capturer  
+![image](/readme_images/Capture1.PNG?raw=true "image")  
+2. F9 > Starts Recording
+![image](/readme_images/Capture2.PNG?raw=true "image")  
+3. F9 > STOP the capture  
+4. F11 > Runs the FFmpeg script to join all still frames.  
+5. Your videoplayer auto-starts opening the new converted video!  
 ![image](/readme_images/Capture3.PNG?raw=true "image")
 
 ### Data path and "ffmpeg.exe":
@@ -29,6 +35,7 @@ Uses ofxSurfing_CaptureWindowStills.h
 
 ### 2. example-BasicVideo: realtime encoding
 Uses ofxSurfing_CaptureWindowFFMPEG.h  
+(with realtime capture and FFmpeg video encoding)  
 ![image](/readme_images/Capture4.PNG?raw=true "image")
 
 ## Features
