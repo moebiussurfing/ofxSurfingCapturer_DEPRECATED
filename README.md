@@ -1,5 +1,5 @@
 ofxSurfingCapturer
-=============================
+====================
 
 # Overview
 **ofxSurfingCapturer** is an **openFrameworks** addon to do *fast video capturing* but storing **still frames** to join to video with *FFmpeg*. It helps on all the capture workflow. 
