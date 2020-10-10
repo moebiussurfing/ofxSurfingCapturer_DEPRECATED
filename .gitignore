@@ -7,6 +7,9 @@
 ## can exclude some sttings files
 
 *.tif
+*.mp4
+*.avi
+*.png
 
 #*.XML
 #*.xml

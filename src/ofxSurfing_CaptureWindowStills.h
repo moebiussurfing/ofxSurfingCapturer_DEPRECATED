@@ -18,6 +18,10 @@ class CaptureWindow : public ofBaseApp, public ofThread
 {
 
 public:
+	std::string pathRoot;
+	void setPathRoot(std::string path) {
+		pathRoot = path;
+	}
 
 	//--------------------------------------------------------------
 	void doBuildFFmpeg() {
@@ -35,9 +39,9 @@ public:
 		cap_w = 1920;
 		cap_h = 1080;
 
-		_pathFolderRoot = "captures\\";
-		_pathFolderStills = _pathFolderRoot + "Stills\\";
-		_pathFolderSnapshots = _pathFolderRoot + "Snapshots\\";
+		_pathFolderCaptures = "captures\\";
+		_pathFolderStills = _pathFolderCaptures + "Stills\\";
+		_pathFolderSnapshots = _pathFolderCaptures + "Snapshots\\";
 	};
 
 	~CaptureWindow() {
@@ -52,7 +56,7 @@ private:
 	ofFbo::Settings cap_Fbo_Settings;
 	int cap_w, cap_h;
 
-	string _pathFolderRoot;
+	string _pathFolderCaptures;
 	string _pathFolderStills;
 	string _pathFolderSnapshots;
 
@@ -108,11 +112,11 @@ public:
 	void setup(std::string path = "captures\\", ofImageFormat format = OF_IMAGE_FORMAT_TIFF) {
 		ofLogWarning(__FUNCTION__) << "path: " << path << " ofImageFormat: " << format;
 
-		_pathFolderRoot = path; // "captures\\"
-		_pathFolderStills = _pathFolderRoot + "Stills\\";
-		_pathFolderSnapshots = _pathFolderRoot + "Snapshots\\";
+		_pathFolderCaptures = path; // "captures\\"
+		_pathFolderStills = _pathFolderCaptures + "Stills\\";
+		_pathFolderSnapshots = _pathFolderCaptures + "Snapshots\\";
 
-		ofxSurfingHelpers::CheckFolder(_pathFolderRoot);
+		ofxSurfingHelpers::CheckFolder(_pathFolderCaptures);
 		ofxSurfingHelpers::CheckFolder(_pathFolderStills);
 		ofxSurfingHelpers::CheckFolder(_pathFolderSnapshots);
 
@@ -377,6 +381,7 @@ public:
 
 				//set full HD
 			case OF_KEY_F5:
+				ofSetWindowShape(1920, 1080);
 				windowResized(1920, 1080);
 				break;
 
@@ -516,11 +521,12 @@ private:
 			stringstream fileOut;
 			stringstream pathAppData;
 
-			pathAppData << "F:\\openFrameworks\\apps\\20\\CovidBCN-02\\bin\\data\\";
+			pathAppData << pathRoot;
 
-			ffmpeg << pathAppData.str().c_str() << _pathFolderRoot << "ffmpeg.exe";
+			ffmpeg << pathAppData.str().c_str() << "ffmpeg.exe";
+			//ffmpeg << pathAppData.str().c_str() << _pathFolderCaptures << "ffmpeg.exe";
 
-			pathDest << pathAppData.str().c_str() << _pathFolderRoot;
+			pathDest << pathAppData.str().c_str() << _pathFolderCaptures;
 			filesSrc << pathAppData.str().c_str() << _pathFolderStills << "%05d.tif"; // data/stills/%05d.tif
 			nameDest << "output_" << ofGetTimestampString() << ".mp4"; // "output.mp4";
 			fileOut << pathDest.str().c_str() << nameDest;

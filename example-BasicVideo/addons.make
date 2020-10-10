@@ -1,5 +1,3 @@
-ofxGui
 ofxFastFboReader
 ofxFFmpegRecorder
 ofxSurfingCapturer
-ofxSurfingHelpers

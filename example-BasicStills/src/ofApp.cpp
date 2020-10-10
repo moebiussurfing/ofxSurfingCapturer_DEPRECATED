@@ -9,12 +9,19 @@ void ofApp::setup() {
 	halfy = ofGetHeight() / 2;
 	pos = glm::vec2(halfx, halfy);
 
+	//-
+
+	// set rooPath
+	capturer.setPathRoot("F:\\openFrameworks\\addons\\ofxSurfingCapturer\\example-BasicStills\\bin\\data\\");
+	// "ffmpeg.exe" -> must be located on /rootPath/
+	// look for /snapshots and /Stills on there
+	// converted output video "output_2020-10-10-03-48-49-172.mp4" will be placed into: pathRoot/captures/
+	
 	// default detination is bin/data/captures
 	// default image format is TIFF
-	capturer.setup(); // customizable using setup("destination\\", OF_IMAGE_FORMAT_PNG);
+	capturer.setup(); // customizable using setup("captures\\", OF_IMAGE_FORMAT_PNG);
 
-	capturer.setActive(true);
-	//capturer.setVisibleInfo(true);
+	capturer.setActive(true); // make gui visible
 }
 
 //--------------------------------------------------------------

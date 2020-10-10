@@ -1,4 +1,2 @@
-ofxGui
 ofxSurfingCapturer
-ofxSurfingHelpers
 ofxTextureRecorder
