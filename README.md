@@ -7,23 +7,23 @@ ofxSurfingCapturer
 # Two alternatives
 Includes **two** different **independent** classes:  
 
-- **ofxSurfing_CaptureWindowStills.h**  
+- 1. **ofxSurfing_CaptureWindowStills.h**  
 The recommended option: It's much faster bc captures still frames.  
 Based on: **ofxTextureRecorder**.  
 
-- **ofxSurfing_CaptureWindowFFMPEG.h**  
+- 2. **ofxSurfing_CaptureWindowFFMPEG.h**  
 Less recommended option: It encodes to video live, so it's slower in some machines.  
 Based on: **ofxFFmpegRecorder** and **ofxFastFboReader**.
 
 ## Screenshots
 
-### example-BasicStills:
+### 1. example-BasicStills:
 Uses ofxSurfing_CaptureWindowStills.h  
 ![image](/readme_images/Capture1.PNG?raw=true "image")
 ![image](/readme_images/Capture2.PNG?raw=true "image")
 ![image](/readme_images/Capture3.PNG?raw=true "image")
 
-### example-BasicVideo: realtime encoding
+### 2. example-BasicVideo: realtime encoding
 Uses ofxSurfing_CaptureWindowFFMPEG.h  
 ![image](/readme_images/Capture4.PNG?raw=true "image")
 
@@ -68,11 +68,11 @@ ofApp::draw(){
 ```
 
 ## Dependencies
-**ofxSurfing_CaptureWindowStills**:  
+1. **ofxSurfing_CaptureWindowStills**:  
 https://github.com/moebiussurfing/ofxTextureRecorder  
 forked from **arturoc/ofxTextureRecorder**
 
-**ofxSurfing_CaptureWindowFFMPEG**:  
+2. **ofxSurfing_CaptureWindowFFMPEG**:  
 https://github.com/gallagher-tech/ofxFFmpegRecorder.git  
 https://github.com/NickHardeman/ofxFastFboReader.git  
 
