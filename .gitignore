@@ -9,7 +9,7 @@
 *.tif
 *.mp4
 *.avi
-*.png
+#*.png
 
 #*.XML
 #*.xml
