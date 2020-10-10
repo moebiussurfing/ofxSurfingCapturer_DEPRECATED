@@ -31,7 +31,7 @@
 #endif
 #endif
 
-#include "ofxSurfingHelpers.h"
+#include "ofxSurfingHelpers2.h"
 
 class CaptureWindow
 {
@@ -41,7 +41,12 @@ public:
 		cap_h = 1080;
 		cap_Bitrate = 10000;
 		cap_Framerate = 30;
+
+		//string _font = "assets/fonts/telegrama_render.otf";
+		string _font = "assets/fonts/overpass-mono-bold.otf";
+		font.load(_font, 8);
 	};
+
 	~CaptureWindow() {};
 
 	//-
@@ -75,7 +80,7 @@ private:
 
 	std::string textInfo;
 	std::string _pathFolder;
-
+	ofTrueTypeFont font;
 public:
 	//--------------------------------------------------------------
 	void init() {///must be called after bitrate, framerate and size w/h are setted
@@ -104,13 +109,13 @@ public:
 		textInfo += "F9 : Start Recording"; textInfo += "\n";
 		textInfo += "F10: Take Snapshot"; textInfo += "\n";
 		textInfo += "i  : Set optimal Instagram size"; textInfo += "\n";
-		textInfo += "I  : Get a frame from located video file"; //textInfo += "\n";
+		textInfo += "I  : Get a frame from video file"; //textInfo += "\n";
 	}
 
 	//--------------------------------------------------------------
 	void setup(std::string path = "captures/") {///call with the path folder if you want to customize
 		_pathFolder = path;
-		ofxSurfingHelpers::CheckFolder(_pathFolder);
+		ofxSurfingHelpers2::CheckFolder(_pathFolder);
 
 		//windows ffmpeg screen recorder
 #ifdef USE_FFMPEG_RECORDER
@@ -131,7 +136,7 @@ public:
 
 			cap_Fbo_Settings.numSamples = 16; //BUG: on ofxFastFboReader requires an aux blitFbo...
 			cap_Fbo_Settings.useDepth = true;
-			
+
 			//cap_Fbo_Settings.useStencil = true;
 			//cap_Fbo_Settings.depthStencilAsTexture = true;
 			//cap_Fbo_Settings.maxFilter
@@ -214,7 +219,7 @@ public:
 
 		//windows ffmpeg screen recorder
 #ifdef USE_FFMPEG_RECORDER
-		if (bRecPrepared) 
+		if (bRecPrepared)
 		{
 			cap_Fbo.begin();
 
@@ -286,86 +291,101 @@ public:
 #ifdef USE_FFMPEG_RECORDER
 
 		//TODO: must improve performance using less draw calls...
+		string str = "";
 
 		if (bRecPrepared || cap_Recorder.isRecording()) {
-			int y = ofGetHeight() - 200;
-			int x = 20;
 
 			//cap info
-			string str;
-			str = "SIZE " + ofToString(cap_w) + "x" + ofToString(cap_h);
-			str += " | BITRATE " + ofToString(cap_Bitrate);
-			str += " | FRAMERATE " + ofToString(cap_Framerate);
-
-			//red rec circle
-			if (cap_Recorder.isRecording())
-			{
-				ofFill();
-				ofSetColor(ofColor::red);
-				ofDrawCircle(ofPoint(x + 8, y), 8);
-				ofNoFill();
-				ofSetLineWidth(2.f);
-				ofSetColor(ofColor::black);
-				ofDrawCircle(ofPoint(x + 8, y), 8);
-				y += 28;
-			}
-			else if (bRecPrepared)
-			{
-				if (ofGetFrameNum() % 60 < 20) {
-					ofFill();
-					ofSetColor(ofColor::red);
-					ofDrawCircle(ofPoint(x + 8, y), 8);
-				}
-				ofNoFill();
-				ofSetLineWidth(2.f);
-				ofSetColor(ofColor::black);
-				ofDrawCircle(ofPoint(x + 8, y), 8);
-				y += 28;
-			}
+			str += "FFMPEG SETTINGS\n";
+			str += "SIZE " + ofToString(cap_w) + "x" + ofToString(cap_h);
+			str += "\n";
+			str += "BITRATE " + ofToString(cap_Bitrate);
+			str += "\n";
+			str += "FRAMERATE " + ofToString(cap_Framerate);
+			str += "\n\n";
 
 			//fps
-			ofDrawBitmapStringHighlight("FPS " + ofToString(ofGetFrameRate(), 0), x, y);
-			y += 20;
-
-			//cap info
-			ofDrawBitmapStringHighlight(str, x, y);
-			y += 20;
+			str += "FPS " + ofToString(ofGetFrameRate(), 0);
+			str += "\n";
 
 			//refresh window size
-			ofDrawBitmapStringHighlight("KEY F7: REFRESH WINDOW SIZE", x, y);
-			y += 20;
-
 			if (cap_Recorder.isRecording())
 			{
-				ofDrawBitmapStringHighlight("RECORD DURATION: " + ofToString(cap_Recorder.getRecordedDuration(), 1), x, y);
-				y += 20;
-				ofDrawBitmapStringHighlight("KEY F9: STOP", x, y);
-				y += 20;
+				str += "RECORD DURATION: " + ofToString(cap_Recorder.getRecordedDuration(), 1);
+				str += "\n";
+				str += "KEY F9: STOP";
+				str += "\n";
 			}
 			else if (bRecPrepared)
 			{
-				ofDrawBitmapStringHighlight("RECORD MOUNTED. READY...", x, y);
-				y += 20;
-				ofDrawBitmapStringHighlight("KEY F9: START  F8: UNMOUNT", x, y);
-				y += 20;
+				str += "RECORD MOUNTED. READY...";
+				str += "\n";
+				str += "KEY F9: START";
+				str += "\n";
+				str += "KEY F8: UNMOUNT";
+				str += "\n";
 			}
+			str += "KEY F7: REFRESH WINDOW SIZE";
+			str += "\n";
+		}
+
+		{
+			str += "\n" + textInfo;
+
+			//-
+
+			// draw
+			int x = 40;
+			float h = ofxSurfingHelpers2::getHeightBBtextBoxed(font, str);//TODO: ? makes a bad offset..
+			int y = ofGetHeight() - h - 90;
+
+			ofxSurfingHelpers2::drawTextBoxed(font, str, x, y);
 
 			////TEST: BUG: antialias
 			//if (cap_Recorder.isRecording())
 			//{
 			//	cap_Tex.draw(100, 100, 800, 600);
 			//}
+
+			//-
+
+			//red rec circle
+			x += 190;
+			y += 10;
+			float radius = 12;
+			if (cap_Recorder.isRecording())
+			{
+				ofFill();
+				ofSetColor(ofColor::red);
+				ofDrawCircle(ofPoint(x + radius, y), radius);
+				ofNoFill();
+				ofSetLineWidth(2.f);
+				ofSetColor(ofColor::black);
+				ofDrawCircle(ofPoint(x + radius, y), radius);
+			}
+			else if (bRecPrepared)
+			{
+				if (ofGetFrameNum() % 60 < 20) {
+					ofFill();
+					ofSetColor(ofColor::red);
+					ofDrawCircle(ofPoint(x + radius, y), radius);
+				}
+				ofNoFill();
+				ofSetLineWidth(2.f);
+				ofSetColor(ofColor::black);
+				ofDrawCircle(ofPoint(x + radius, y), radius);
+			}
 		}
 #endif
 
 		ofPopStyle();
 	}
 
-	//--------------------------------------------------------------
-	void drawHelp() {
-		// help info
-		ofDrawBitmapStringHighlight(textInfo, 20, 50);
-	}
+	////--------------------------------------------------------------
+	//void drawHelp() {
+	//	// help info
+	//	ofDrawBitmapStringHighlight(textInfo, 20, 50);
+	//}
 
 	//--------------------------------------------------------------
 	void keyPressed(ofKeyEventArgs &eventArgs) {///to received short keys control commands
@@ -439,7 +459,7 @@ public:
 			else//start
 			{
 				//string path = "data/";
-				//ofxSurfingHelpers::CheckFolder(path);
+				//ofxSurfingHelpers2::CheckFolder(path);
 				//std::string fileCap = "data/capture" + ofGetTimestampString() + ".avi";
 				//std::string fileCap = path + "capture_01.avi";
 				//cap_Recorder.setOutputPath(fileCap);
@@ -497,7 +517,7 @@ public:
 			break;
 #endif
 		}
-	}
+		}
 
 	//windows ffmpeg screen recorder
 	//--------------------------------------------------------------
@@ -528,4 +548,4 @@ public:
 		init();
 #endif
 	}
-};
+	};

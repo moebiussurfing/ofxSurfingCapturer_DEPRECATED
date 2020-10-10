@@ -12,13 +12,15 @@
 ///----
 
 #include "ofxTextureRecorder.h"
-#include "ofxSurfingHelpers.h"
+#include "ofxSurfingHelpers2.h"
 
 class CaptureWindow : public ofBaseApp, public ofThread
 {
+private:
+	std::string pathRoot;
+	ofTrueTypeFont font;
 
 public:
-	std::string pathRoot;
 	void setPathRoot(std::string path) {
 		pathRoot = path;
 	}
@@ -42,6 +44,10 @@ public:
 		_pathFolderCaptures = "captures\\";
 		_pathFolderStills = _pathFolderCaptures + "Stills\\";
 		_pathFolderSnapshots = _pathFolderCaptures + "Snapshots\\";
+
+		//string _font = "assets/fonts/telegrama_render.otf";
+		string _font = "assets/fonts/overpass-mono-bold.otf";
+		font.load(_font, 8);
 	};
 
 	~CaptureWindow() {
@@ -116,9 +122,9 @@ public:
 		_pathFolderStills = _pathFolderCaptures + "Stills\\";
 		_pathFolderSnapshots = _pathFolderCaptures + "Snapshots\\";
 
-		ofxSurfingHelpers::CheckFolder(_pathFolderCaptures);
-		ofxSurfingHelpers::CheckFolder(_pathFolderStills);
-		ofxSurfingHelpers::CheckFolder(_pathFolderSnapshots);
+		ofxSurfingHelpers2::CheckFolder(_pathFolderCaptures);
+		ofxSurfingHelpers2::CheckFolder(_pathFolderStills);
+		ofxSurfingHelpers2::CheckFolder(_pathFolderSnapshots);
 
 		buildInfo();
 
@@ -211,8 +217,9 @@ public:
 
 		if (bShowInfo && bActive) {
 			int x = 40;
-			int y = ofGetHeight() - 300;
-			string str = "\n\n";
+			int y = 0;
+
+			string str = "\n\n\n";
 
 			//--
 
@@ -224,7 +231,6 @@ public:
 				str += "FBO SIZE " + ofToString(cap_w) + "x" + ofToString(cap_h); str += +"\n";
 				str += "RECORDER " + ofToString(recorder.getWidth()) + "x" + ofToString(recorder.getHeight());
 				str += +"\n"; str += +"\n";
-
 
 				if (bRecording)
 				{
@@ -294,41 +300,50 @@ public:
 			//-
 
 			//draw
+
 			str += info;
-			ofDrawBitmapStringHighlight(str, x, y);
+
+			float h = ofxSurfingHelpers2::getHeightBBtextBoxed(font, str);//TODO: ? makes a bad offset..
+			
+			y = ofGetHeight() - h - 90;
+
+			ofxSurfingHelpers2::drawTextBoxed(font, str, x, y);
+			//ofDrawBitmapStringHighlight(str, x, y);
 
 			//-
 
 			//red circle
 
-			int yy = y;
+			int yy = y + 50;
+			x += 210;
+			float radius = 10;
+
 			if (!isThreadRunning()) {
 				ofPushStyle();
 				if (bRecording)
 				{
 					ofFill();
 					ofSetColor(ofColor::red);
-					ofDrawCircle(ofPoint(x + 8, yy), 8);
+					ofDrawCircle(ofPoint(x + radius, yy), radius);
 					ofNoFill();
 					ofSetLineWidth(2.f);
 					ofSetColor(ofColor::black);
-					ofDrawCircle(ofPoint(x + 8, yy), 8);
+					ofDrawCircle(ofPoint(x + radius, yy), radius);
 				}
 				else if (bRecPrepared)
 				{
 					if (ofGetFrameNum() % 60 < 20) {
 						ofFill();
 						ofSetColor(ofColor::red);
-						ofDrawCircle(ofPoint(x + 8, yy), 8);
+						ofDrawCircle(ofPoint(x + radius, yy), radius);
 					}
 					ofNoFill();
 					ofSetLineWidth(2.f);
 					ofSetColor(ofColor::black);
-					ofDrawCircle(ofPoint(x + 8, yy), 8);
+					ofDrawCircle(ofPoint(x + radius, yy), radius);
 				}
 				ofPopStyle();
 			}
-
 
 			//-
 
@@ -461,7 +476,7 @@ public:
 					std::string _path = _pathFolderStills;
 					ofDirectory dataDirectory(ofToDataPath(_path, true));
 					dataDirectory.remove(true);
-					ofxSurfingHelpers::CheckFolder(_path);
+					ofxSurfingHelpers2::CheckFolder(_path);
 
 				}
 				break;

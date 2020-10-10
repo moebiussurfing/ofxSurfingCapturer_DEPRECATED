@@ -29,7 +29,7 @@ void ofApp::draw() {
 	capturer.end();
 
 	capturer.draw();
-	capturer.drawHelp();
+	//capturer.drawHelp();
 }
 
 //--------------------------------------------------------------
