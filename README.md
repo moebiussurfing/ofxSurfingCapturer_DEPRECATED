@@ -3,11 +3,23 @@ ofxSurfingCapturer
 
 # Overview
 **ofxSurfingCapturer** is an **openFrameworks** addon to do fast video capturing but storing still frames to join to video with ffmpeg.
+Includes two different independent classes:  
+**ofxSurfing_CaptureWindowStills.h** -> Recommended option: It's much faster bc captures still frames.  
+based on: **ofxTextureRecorder**.  
 
-## Screenshot
+**ofxSurfing_CaptureWindowFFMPEG.h** -> Less recommended option: It lives encodes to video, so it's slower in some machines.  
+based on: **ofxFFmpegRecorder** and **ofxFastFboReader**.
+
+## Screenshots
+
+### example-BasicStills:
+Uses ofxSurfing_CaptureWindowStills.h  
 ![image](/readme_images/Capture1.PNG?raw=true "image")
 ![image](/readme_images/Capture2.PNG?raw=true "image")
 ![image](/readme_images/Capture3.PNG?raw=true "image")
+
+### example-BasicVideo:
+Uses ofxSurfing_CaptureWindowFFMPEG.h  
 
 ## Features
 - Faster than other alternatives that capture video.

@@ -2,21 +2,18 @@
 
 #include "ofMain.h"
 
-///----
-///
-#define INCLUDE_RECORDER
-///
-///----
+// NOTES: 
+// this class is currently kind of deprecated... 
+// Now I am getting much better performance using the ofxSurfing_CaptureWindowStills.h class !
+// -> it saves just raw snapshots (without compression) for every frame. 
+// video is created after capture process with an ffmpeg script.
+//
+// TODO: must finish macOS mode... 
+// it's only tested on Windows.
+// BUG: (maybe) when enabled antialias 16 or RGBF32 recording goes grey... ??
 
-//TODO: BUG: when enabled antialias 16 or RGBF32 recording goes grey...?
-#ifdef INCLUDE_RECORDER
-//macOS screen recorder
-#ifdef TARGET_OSX
-#define USE_MAC_RECORDER
-#ifdef USE_MAC_RECORDER
-#include "ofxMacScreenRecorder.h"
-#endif
-#endif
+//-
+
 //windows ffmpeg screen recorder
 #ifdef TARGET_WIN32
 #define USE_FFMPEG_RECORDER//TODO: disable
@@ -25,13 +22,19 @@
 #include "ofxFastFboReader.h"
 #endif
 #endif
+
+//macOS screen recorder
+#ifdef TARGET_OSX
+#define USE_MAC_RECORDER
+#ifdef USE_MAC_RECORDER
+#include "ofxMacScreenRecorder.h"
+#endif
 #endif
 
 #include "ofxSurfingHelpers.h"
 
 class CaptureWindow
 {
-
 public:
 	CaptureWindow() {
 		cap_w = 1920;
@@ -41,31 +44,37 @@ public:
 	};
 	~CaptureWindow() {};
 
-public:
+	//-
+
+private:
 	//macOS screen recorder
 #ifdef USE_MAC_RECORDER
 	ofxMacScreenRecorder recorder;
 	ofxMacScreenRecorderSetting recorderSetting;
 #endif
+
+private:
 	//windows ffmpeg screen recorder
 #ifdef USE_FFMPEG_RECORDER
 	ofxFFmpegRecorder cap_Recorder;
 	ofFbo cap_Fbo;
 	ofPixels cap_Pix;
+
 	ofxFastFboReader cap_Reader;
 	ofFbo::Settings cap_Fbo_Settings;
+
 	bool bRecPrepared = false;
 	int cap_w, cap_h;
 	int cap_Bitrate;
 	int cap_Framerate;
 #endif
-	string _pathFolder;
 
 	//TEST: BUG: antialias
 	//ofTexture cap_Tex;
 	ofFbo blitFbo;
 
 	std::string textInfo;
+	std::string _pathFolder;
 
 public:
 	//--------------------------------------------------------------
@@ -91,10 +100,11 @@ public:
 		//build help info
 		textInfo = "";
 		textInfo += "HELP KEYS"; textInfo += "\n";
-		textInfo += "u: mount recorder"; textInfo += "\n";
-		textInfo += "U: start recording"; textInfo += "\n";
-		textInfo += "I: get a frame from located video file"; textInfo += "\n";
-		textInfo += "i: set optimal Instagram size"; //textInfo += "\n";
+		textInfo += "F8 : Mount Recorder"; textInfo += "\n";
+		textInfo += "F9 : Start Recording"; textInfo += "\n";
+		textInfo += "F10: Take Snapshot"; textInfo += "\n";
+		textInfo += "i  : Set optimal Instagram size"; textInfo += "\n";
+		textInfo += "I  : Get a frame from located video file"; //textInfo += "\n";
 	}
 
 	//--------------------------------------------------------------
@@ -118,8 +128,10 @@ public:
 
 			cap_Fbo_Settings.width = cap_w;
 			cap_Fbo_Settings.height = cap_h;
+
+			cap_Fbo_Settings.numSamples = 16; //BUG: on ofxFastFboReader requires an aux blitFbo...
 			cap_Fbo_Settings.useDepth = true;
-			cap_Fbo_Settings.numSamples = 16;//BUG: on ofxFastFboReader requires aux blitFbo..
+			
 			//cap_Fbo_Settings.useStencil = true;
 			//cap_Fbo_Settings.depthStencilAsTexture = true;
 			//cap_Fbo_Settings.maxFilter
@@ -164,15 +176,15 @@ public:
 		//-
 		*/
 
-		//-
+		//--
 
-		//presets
+		// some fffmpeg presets
 
-		////instagram
+		//// 1. instagram
 		//cap_Bitrate = 28000;
 		//cap_Framerate = 30;
 
-		//hq
+		// 2. hq
 		cap_Bitrate = 80000;
 		cap_Framerate = 60;
 
@@ -180,6 +192,8 @@ public:
 
 		init();
 #endif
+		//-
+
 		//macOS screen recorder
 #ifdef USE_MAC_RECORDER
 		recorderSetting.codecType = ofxMacScreenRecorder::CodecType::ProRes4444;
@@ -200,8 +214,10 @@ public:
 
 		//windows ffmpeg screen recorder
 #ifdef USE_FFMPEG_RECORDER
-		if (bRecPrepared) {
+		if (bRecPrepared) 
+		{
 			cap_Fbo.begin();
+
 			//ofBackground(0);
 			//ofSetColor(255);
 			//ofClear(0, 255);
@@ -241,12 +257,14 @@ public:
 				//TEST: BUG: antialias
 				//C. blitting test
 				blitFbo.begin();
-				ofClear(0);
+				ofClear(0, 255);
 				cap_Fbo.draw(0, 0, cap_w, cap_h);
 				blitFbo.end();
 
 				cap_Reader.readToPixels(blitFbo, cap_Pix, OF_IMAGE_COLOR);
-				if (cap_Pix.getWidth() > 0 && cap_Pix.getHeight() > 0) {
+
+				if (cap_Pix.getWidth() > 0 && cap_Pix.getHeight() > 0)
+				{
 					cap_Recorder.addFrame(cap_Pix);
 				}
 			}
@@ -261,8 +279,13 @@ public:
 	//--------------------------------------------------------------
 	void draw() {///draw the gui info if desired
 
+		//draw red circle and info when recording
+		ofPushStyle();
+
 		//windows ffmpeg screen recorder
 #ifdef USE_FFMPEG_RECORDER
+
+		//TODO: must improve performance using less draw calls...
 
 		if (bRecPrepared || cap_Recorder.isRecording()) {
 			int y = ofGetHeight() - 200;
@@ -273,9 +296,6 @@ public:
 			str = "SIZE " + ofToString(cap_w) + "x" + ofToString(cap_h);
 			str += " | BITRATE " + ofToString(cap_Bitrate);
 			str += " | FRAMERATE " + ofToString(cap_Framerate);
-
-			//draw red circle and info when recording
-			ofPushStyle();
 
 			//red rec circle
 			if (cap_Recorder.isRecording())
@@ -312,25 +332,23 @@ public:
 			y += 20;
 
 			//refresh window size
-			ofDrawBitmapStringHighlight("KEY F8: REFRESH WINDOW SIZE", x, y);
+			ofDrawBitmapStringHighlight("KEY F7: REFRESH WINDOW SIZE", x, y);
 			y += 20;
 
 			if (cap_Recorder.isRecording())
 			{
 				ofDrawBitmapStringHighlight("RECORD DURATION: " + ofToString(cap_Recorder.getRecordedDuration(), 1), x, y);
 				y += 20;
-				ofDrawBitmapStringHighlight("KEY U: STOP", x, y);
+				ofDrawBitmapStringHighlight("KEY F9: STOP", x, y);
 				y += 20;
 			}
 			else if (bRecPrepared)
 			{
 				ofDrawBitmapStringHighlight("RECORD MOUNTED. READY...", x, y);
 				y += 20;
-				ofDrawBitmapStringHighlight("KEY U: START  u: UNMOUNT", x, y);
+				ofDrawBitmapStringHighlight("KEY F9: START  F8: UNMOUNT", x, y);
 				y += 20;
 			}
-
-			ofPopStyle();
 
 			////TEST: BUG: antialias
 			//if (cap_Recorder.isRecording())
@@ -339,6 +357,8 @@ public:
 			//}
 		}
 #endif
+
+		ofPopStyle();
 	}
 
 	//--------------------------------------------------------------
@@ -353,41 +373,17 @@ public:
 		const int keycode = eventArgs.keycode;
 		const int scancode = eventArgs.scancode;
 		const uint32_t codepoint = eventArgs.codepoint;
-		//bool mod_CONTROL = eventArgs.hasModifier(OF_KEY_CONTROL);
-
-		//cout << endl << __FUNCTION__ << " key: " << key << endl;
-		//cout << __FUNCTION__ << " keycode: " << keycode << endl;
-		//cout << __FUNCTION__ << " scancode:" << scancode << endl;
-		//cout << __FUNCTION__ << " codepoint:" << codepoint << endl;
-
-		if (key == 0 && keycode == 283 && scancode == 311 && codepoint == 0) {
-			cout << __FUNCTION__ << "[pressed print screen]" << endl;
-
-			//take screenshot
-			{
-				ofImage img;
-				img.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
-				//string _pathFolder = "captures/";
-				string _fileName = "snapshot_" + ofGetTimestampString() + ".png";
-				//string _fileName = "snapshot_"+ofToString(snapCounter++, 5, '0')+".png";
-				string _pathFilename = ofToDataPath(_pathFolder + _fileName, true);//bin/data
-				bool b = img.save(_pathFilename);
-				if (b) cout << __FUNCTION__ << " Saved screenshot successfully: " << _pathFilename << endl;
-				else cout << __FUNCTION__ << " Error saving screenshot: " << _pathFilename << endl;
-			}
-		}
 
 		//-
 
 		switch (key)
 		{
 			//windows ffmpeg screen recorder
-#ifdef USE_FFMPEG_RECORDER
-		//case OF_KEY_F11://screenshot pict
-		//cap_Recorder.saveThumbnail(0, 0, 2, ("data/captures/cap" + ofGetTimestampString() + ".png"), ofVec2f(0, 0), ofRectangle(0, 0, 500, 400));
-		//break;
+			//case OF_KEY_F11://screenshot pict
+			//cap_Recorder.saveThumbnail(0, 0, 2, ("data/captures/cap" + ofGetTimestampString() + ".png"), ofVec2f(0, 0), ofRectangle(0, 0, 500, 400));
+			//break;
 
-		//set instagram size
+			//set instagram size
 		case 'i':
 		{
 			int w, h;
@@ -402,7 +398,6 @@ public:
 			//--
 
 			//windows ffmpeg screen recorder
-#ifdef USE_FFMPEG_RECORDER	
 			cap_Fbo_Settings.width = cap_w;
 			cap_Fbo_Settings.height = cap_h;
 			cap_Fbo.allocate(cap_Fbo_Settings);
@@ -423,17 +418,16 @@ public:
 			//-
 
 			init();
-#endif
 		}
 		break;
 
 		//prepare video record
-		case 'u':
+		case OF_KEY_F8:
 			bRecPrepared = !bRecPrepared;
 			break;
 
 			//start video record
-		case 'U':
+		case OF_KEY_F9:
 		{
 			if (cap_Recorder.isRecording())//stop
 			{
@@ -461,22 +455,37 @@ public:
 		}
 		break;
 
-		case 'I'://gets a frame from the located video. not a live screenshot!
+		//take screenshot
+		case OF_KEY_F10:
+		{
+			ofImage img;
+			img.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
+			//string _pathFolder = "captures/";
+			//string _fileName = "snapshot_"+ofToString(snapCounter++, 5, '0')+".png";
+			string _fileName = "snapshot_" + ofGetTimestampString() + ".png";
+			string _pathFilename = ofToDataPath(_pathFolder + _fileName, true);//bin/data
+			bool b = img.save(_pathFilename);
+			if (b) cout << __FUNCTION__ << " Saved screenshot successfully: " << _pathFilename << endl;
+			else cout << __FUNCTION__ << " Error saving screenshot: " << _pathFilename << endl;
+		}
+		break;
+
+		//gets a frame from the located video. not a live screenshot!
+		case 'I':
 		{
 			string _path = ofToDataPath(_pathFolder + "Screenshot_" + ofToString(ofGetTimestampString()) + ".png");
 			cap_Recorder.saveThumbnail(0, 0, 2, _path, ofVec2f(0, 0), ofRectangle(0, 0, ofGetWidth(), ofGetHeight()));
 			ofLogWarning(__FUNCTION__) << "Snapshot: " << _path;
 		}
 		break;
-#endif
-		
-		case OF_KEY_F8:// refresh window size to update fbo settings
+
+		case OF_KEY_F7:// refresh window size to update fbo settings
 			windowResized(ofGetWidth(), ofGetHeight());
 			break;
 
-		//-
+			//-
 
-		//macOS screen recorder
+			//macOS screen recorder
 #ifdef USE_MAC_RECORDER
 		case OF_KEY_F11:
 			ofLogNotice() << ofGetWindowPositionX() << ", " << ofGetWindowPositionY();
