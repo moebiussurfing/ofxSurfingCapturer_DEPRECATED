@@ -34,11 +34,11 @@ Uses ofxSurfing_CaptureWindowFFMPEG.h
 ## Features
 - **Faster** than other alternatives that capture video.
 - **User controls** to handle all the capture workflow:  
-Mount (F8)  
-Record (F9)  
-Take snapshot (F10)  
-Clear all stills (Ctrl+Alt+BackSpace)
-**Auto-call ffmpeg** batch *stills_to_video* compression after capture (F11),  
+1. Mount (F8)  
+2. Record (F9)  
+3. Take snapshot (F10)  
+4. Clear all stills (Ctrl+Alt+BackSpace)
+5. **Auto-call batch ffmpeg** *stills_to_video* compression after capture (F11),  
 auto-opens video with your video player.
 
 ## Usage
