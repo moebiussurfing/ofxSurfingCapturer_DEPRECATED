@@ -1,0 +1,4 @@
+ofxGui
+ofxFastFboReader
+ofxFFmpegRecorder
+ofxSurfingHelpers
