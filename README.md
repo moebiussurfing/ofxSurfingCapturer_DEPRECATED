@@ -23,13 +23,13 @@ Uses ofxSurfing_CaptureWindowStills.h
 ![image](/readme_images/Capture2.PNG?raw=true "image")
 ![image](/readme_images/Capture3.PNG?raw=true "image")
 
-### 2. example-BasicVideo: realtime encoding
-Uses ofxSurfing_CaptureWindowFFMPEG.h  
-![image](/readme_images/Capture4.PNG?raw=true "image")
-
 ### Data path and "ffmpeg.exe":
 ![image](/readme_images/Capture5.PNG?raw=true "image")
 ![image](/readme_images/Capture6.PNG?raw=true "image")
+
+### 2. example-BasicVideo: realtime encoding
+Uses ofxSurfing_CaptureWindowFFMPEG.h  
+![image](/readme_images/Capture4.PNG?raw=true "image")
 
 ## Features
 - **Faster** than other alternatives that capture video.
