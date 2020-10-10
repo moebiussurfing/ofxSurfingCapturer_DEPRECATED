@@ -20,19 +20,21 @@ Based on: **ofxFFmpegRecorder** and **ofxFastFboReader**.
 ### 1. example-BasicStills:
 Uses ofxSurfing_CaptureWindowStills.h  
 
-### HOW TO  
-1. F8 > Mounts the capturer.  
+### HOW TO / WORKFLOW 
+1. *F8* : Mounts/prepare the capturer...  
 ![image](/readme_images/Capture1.PNG?raw=true "image") 
 
-2. F9 > Starts Recording.
+2. *F9* : START Recording!
 ![image](/readme_images/Capture2.PNG?raw=true "image")  
 
-3. F9 > STOP the capture.  
+3. *F9* : STOP Recording.  
 
-4. F11 > Runs the FFmpeg script to join all still frames.  
+4. *F11* : Run the FFmpeg script to join all the still frames (.tif -> .mp4).  
 
-5. Your videoplayer auto-starts opening the new converted video!  
+5. Your videoplayer will auto-start opening the new created video!  
 ![image](/readme_images/Capture3.PNG?raw=true "image")
+
+6. *Ctrl+Alt+BackSpace*: Remove all still files.  
 
 ### Data path and "ffmpeg.exe":
 ![image](/readme_images/Capture5.PNG?raw=true "image")
