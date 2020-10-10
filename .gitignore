@@ -6,6 +6,8 @@
 
 ## can exclude some sttings files
 
+#*.exe
+
 *.tif
 *.mp4
 *.avi
@@ -191,7 +193,6 @@ Desktop.ini
 *.lib
 
 # Executables
-*.exe
 *.out
 *.app
 
@@ -555,3 +556,5 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+example-BasicStills/bin/example-BasicStills.exe
+example-BasicVideo/bin/example-BasicVideo_debug.exe
