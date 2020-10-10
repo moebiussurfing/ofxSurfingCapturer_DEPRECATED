@@ -23,7 +23,7 @@ Uses ofxSurfing_CaptureWindowStills.h
 ![image](/readme_images/Capture2.PNG?raw=true "image")
 ![image](/readme_images/Capture3.PNG?raw=true "image")
 
-### example-BasicVideo:
+### example-BasicVideo: realtime encoding
 Uses ofxSurfing_CaptureWindowFFMPEG.h  
 ![image](/readme_images/Capture4.PNG?raw=true "image")
 
