@@ -8,11 +8,11 @@ ofxSurfingCapturer
 Includes **two** different **independent** classes:  
 
 - 1. **ofxSurfing_CaptureWindowStills.h**  
-The recommended option: It's much faster bc captures still frames.  
+The recommended option: It's much faster bc captures still (.tif) frames using threading.  
 Based on: **ofxTextureRecorder**.  
 
 - 2. **ofxSurfing_CaptureWindowFFMPEG.h**  
-Less recommended option: It encodes to video live, so it's slower in some machines.  
+One-Step option: Encodes to video live, so it's slower in some machines.  
 Based on: **ofxFFmpegRecorder** and **ofxFastFboReader**.
 
 ## Screenshots
@@ -95,8 +95,8 @@ https://github.com/NickHardeman/ofxFastFboReader.git
 ## Notes
 - Includes some **FFmpeg** scripts, links and a Windows compiled *ffmpeg.exe*.
 - To batch-join stills (.tif) to video (.mp4) requires your own **ffmpeg.exe** binary.
-- TODO: Should improve data path...
-- TODO: Check I window resize don't breaks Fbo capturer size... 
+- TODO: Should improve data path to use default ofDataPath...
+- TODO: Check if window resize don't breaks Fbo capturer size... 
 
 ## Tested systems
 - **Windows10** / **VS2017** / **OF 0.11**
