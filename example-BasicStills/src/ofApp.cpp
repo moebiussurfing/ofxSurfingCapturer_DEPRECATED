@@ -12,7 +12,16 @@ void ofApp::setup() {
 	//-
 
 	// set rooPath
+	//cout << defaultWorkingDirectory();
+	//cout << ofEnableDataPath
+	//cout << ofToDataPath
+	//capturer.setPathRoot(ofToDataPath());
+
 	capturer.setPathRoot("F:\\openFrameworks\\addons\\ofxSurfingCapturer\\example-BasicStills\\bin\\data\\");
+	//capturer.setFfpmegGpu(false); // nvidia gou accelerator is enabled by default. disable if you have AMD Gpu or prefer CPU encoding
+	
+	//-
+
 	// "ffmpeg.exe" -> must be located on /rootPath/
 	// look for /snapshots and /Stills on there
 	// converted output video "output_2020-10-10-03-48-49-172.mp4" will be placed into: pathRoot/captures/

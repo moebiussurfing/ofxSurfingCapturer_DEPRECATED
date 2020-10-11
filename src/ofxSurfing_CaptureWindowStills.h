@@ -7,7 +7,8 @@
 
 ///----
 ///
-//#define USE_3D_DEPTH
+#define USE_3D_DEPTH
+#define ANTIALIAS_NUM_SAMPLES 16
 ///
 ///----
 
@@ -20,13 +21,28 @@ private:
 	std::string pathRoot;
 	ofTrueTypeFont font;
 
+	bool bFfmpegLocated = false;
+	bool bDepth3D = true;
+
+	bool bUseFfmpegNvidiaGPU = true;
 public:
+	//--------------------------------------------------------------
+	void setFfpmegGpu(bool b) {
+		bUseFfmpegNvidiaGPU = b;
+	}
+public:
+	//--------------------------------------------------------------
 	void setPathRoot(std::string path) {
+		// NOTES:
+		//Poco::Path dataFolder(ofToDataPath("", true));
+		//ofToDataPath()
+		//std::filesystem::path("some/path") == std::filesystem::path("some//path")
+
 		pathRoot = path;
 	}
 
 	//--------------------------------------------------------------
-	void doBuildFFmpeg() {
+	void doRunFFmpegCommand() {
 		ofLogWarning(__FUNCTION__) << " to: " << _pathFolderStills;
 
 		// we are running the systems commands
@@ -36,6 +52,7 @@ public:
 	}
 
 public:
+	//--------------------------------------------------------------
 	CaptureWindow()
 	{
 		cap_w = 1920;
@@ -48,8 +65,12 @@ public:
 		//string _font = "assets/fonts/telegrama_render.otf";
 		string _font = "assets/fonts/overpass-mono-bold.otf";
 		font.load(_font, 8);
+
+		// TODO:
+		//pathRoot = ofToDataPath("", false);
 	};
 
+	//--------------------------------------------------------------
 	~CaptureWindow() {
 		// stop the thread on exit
 		waitForThread(true);
@@ -72,7 +93,7 @@ private:
 	bool bShowInfo = true;
 
 public:
-	ofParameter<bool> bActive{ "Window Capturer", false };
+	ofParameter<bool> bActive{ "Window Capturer", false };// public to integrate into your ofApp gui
 	//--------------------------------------------------------------
 	void setActive(bool b) {
 		bActive = b;
@@ -104,19 +125,19 @@ private:
 	std::string info;
 
 	ofImageFormat stillFormat;
-	//enum stillsImageFormat {
-	//	OF_IMAGE_FORMAT_BMP = 0,
-	//	OF_IMAGE_FORMAT_JPEG = 2,
-	//	OF_IMAGE_FORMAT_PNG = 13,
-	//	OF_IMAGE_FORMAT_TIFF = 18,
-	//	OF_IMAGE_FORMAT_RAW = 34
-	//};
 
 public:
 	//--------------------------------------------------------------
 	//call with the path folder if you want to customize
 	void setup(std::string path = "captures\\", ofImageFormat format = OF_IMAGE_FORMAT_TIFF) {
 		ofLogWarning(__FUNCTION__) << "path: " << path << " ofImageFormat: " << format;
+
+		// we can select a still format passing one ofImageFormat like this ones:
+		//	OF_IMAGE_FORMAT_BMP = 0,
+		//	OF_IMAGE_FORMAT_JPEG = 2,
+		//	OF_IMAGE_FORMAT_PNG = 13,
+		//	OF_IMAGE_FORMAT_TIFF = 18,
+		//	OF_IMAGE_FORMAT_RAW = 34
 
 		_pathFolderCaptures = path; // "captures\\"
 		_pathFolderStills = _pathFolderCaptures + "Stills\\";
@@ -137,6 +158,14 @@ public:
 		buildRecorder();
 
 		buildAllocateFbo();
+
+		// locate ffmpeg .exe to allow ffmpeg script. but not mandatory if you join the stills using another software...
+		ofFile file;
+		std::string _pathFfmpeg;
+		_pathFfmpeg = pathRoot + "ffmpeg.exe";
+		bFfmpegLocated = file.doesFileExist(_pathFfmpeg, true);
+		if (bFfmpegLocated) ofLogWarning(__FUNCTION__) << "Located: ffmpeg.exe into " << _pathFfmpeg;
+		else ofLogError(__FUNCTION__) << "Missing required binary file ffmpeg.exe into " << _pathFfmpeg << " !";
 	}
 
 public:
@@ -149,11 +178,15 @@ public:
 		cap_Fbo_Settings.height = cap_h;
 
 #ifdef USE_3D_DEPTH
-		cap_Fbo_Settings.useDepth = true;// required to enable depth test
-		cap_Fbo_Settings.numSamples = 16;// antialias //BUG: like on ofxFastFboReader requires an aux blitFbo... ??
-		//cap_Fbo_Settings.useStencil = true;
-		//cap_Fbo_Settings.depthStencilAsTexture = true;
-		//cap_Fbo_Settings.maxFilter
+		if (bDepth3D) {
+			cap_Fbo_Settings.useDepth = true;// required to enable depth test
+			cap_Fbo_Settings.numSamples = ANTIALIAS_NUM_SAMPLES;// antialias 
+			// BUG: seems like on ofxFastFboReader, requires an aux blitFbo... ??
+			// this can be copied from ofxSurfing_CaptureWindowFFMPEG.h
+			//cap_Fbo_Settings.useStencil = true;
+			//cap_Fbo_Settings.depthStencilAsTexture = true;
+			//cap_Fbo_Settings.maxFilter
+		}
 #endif
 		cap_Fbo.allocate(cap_Fbo_Settings);
 	}
@@ -161,15 +194,12 @@ public:
 	void buildRecorder() {
 		ofLogWarning(__FUNCTION__);
 
-		//recorder.stop();// TODO: trying to allo resize..
+		// TODO: trying to allow resize..
+		//recorder.stop();
 
 		ofxTextureRecorder::Settings settings(cap_Fbo.getTexture());
-		settings.imageFormat = stillFormat;
 
-		//settings.imageFormat = OF_IMAGE_FORMAT_TIFF;
-		//settings.imageFormat = OF_IMAGE_FORMAT_PNG;
-		//settings.imageFormat = OF_IMAGE_FORMAT_JPEG;
-		//settings.imageFormat = OF_IMAGE_FORMAT_RAW;
+		settings.imageFormat = stillFormat;
 
 		settings.numThreads = 12;
 		settings.maxMemoryUsage = 9000000000;
@@ -217,76 +247,20 @@ public:
 
 	//--------------------------------------------------------------
 	void draw() {
-		cap_Fbo.draw(0, 0);//drawing is required outside fbo
+		cap_Fbo.draw(0, 0);// drawing is required outside fbo
 	}
 
 	//--------------------------------------------------------------
-	void drawInfo() {///draw the gui info if desired
+	void drawInfo(int x = 40, int y = 0) {// draw the gui info if desired
 
 		if (bShowInfo && bActive) {
-			int x = 40;
-			int y = 0;
 
 			string str = "\n\n\n";
 
 			//--
 
-			if (bRecPrepared || bRecording || isThreadRunning())
-			{
-				//cap info
-				str += "FPS " + ofToString(ofGetFrameRate(), 0) + "   " + ofToString(recorder.getFrame()) + " frames"; str += +"\n";
-				str += "WINDOW   " + ofToString(ofGetWidth()) + "x" + ofToString(ofGetHeight()); str += +"\n";
-				str += "FBO SIZE " + ofToString(cap_w) + "x" + ofToString(cap_h); str += +"\n";
-				str += "RECORDER " + ofToString(recorder.getWidth()) + "x" + ofToString(recorder.getHeight());
-				str += +"\n"; str += +"\n";
-
-				if (bRecording)
-				{
-					str += "F9 : STOP Recording"; str += "\n";
-					str += "RECORD DURATION: " + ofToString(getRecordedDuration(), 1); str += +"\n";
-
-					//error
-					if (bRecording) {
-						if (recorder.getAvgTimeSave() == 0) {
-							std::string ss;
-							const int p = 30;//blink period in frames
-							int fn = ofGetFrameNum() % p;
-							if (fn < p / 2) ss = "ERROR RECORDING!";
-							else ss = "";
-							str += ss + "\n";
-						}
-					}
-				}
-				else if (bRecPrepared || isThreadRunning())
-				{
-					str += "F9 : START Recording"; str += "\n";
-					str += "F8 : UnMount Recorder"; str += "\n";
-
-					//animated points..
-					const int p = 30;//period in frames
-					int fn = ofGetFrameNum() % (p * 4);
-					bool b0, b1, b2;
-					b0 = (fn > p * 3);
-					b1 = (fn > p * 2);
-					b2 = (fn > p * 1);
-					string sp = "";
-					if (b0) sp += ".";
-					if (b1) sp += ".";
-					if (b2) sp += ".";
-
-					if (isThreadRunning()) { str += "BUILDING STILLS TO VIDEO" + sp; str += "\n"; }
-					else {
-						str += "> MOUNTED! READY" + sp; str += "\n";
-						if (b1 || b2) { str += "> PRESS F9 TO START CAPTURE"; }
-						str += "\n";
-					}
-				}
-			}
-
-			//-
-
-			// press F8
-			else if (!bRecPrepared && !isThreadRunning() && !bRecording)
+			// 1. waiting mount: press F8
+			if (!bRecPrepared && !isThreadRunning() && !bRecording)
 			{
 				str += "F8 : MOUNT Recorder"; str += "\n";
 
@@ -304,14 +278,69 @@ public:
 
 				str += "> PRESS F8" + sp; str += "\n";
 			}
+			// 2. mounted, recording or running ffmpeg script
+			else if (bRecPrepared || bRecording || isThreadRunning())
+			{
+				// cap info
+				str += "FPS " + ofToString(ofGetFrameRate(), 0) + "   " + ofToString(recorder.getFrame()) + " frames\n";
+				str += "WINDOW   " + ofToString(ofGetWidth()) + "x" + ofToString(ofGetHeight()); str += +"\n";
+				str += "FBO SIZE " + ofToString(cap_w) + "x" + ofToString(cap_h); str += +"\n";
+				str += "RECORDER " + ofToString(recorder.getWidth()) + "x" + ofToString(recorder.getHeight());
+				str += +"\n\n";
+
+				if (bRecording)
+				{
+					str += "F9 : STOP Recording\n";
+					str += "RECORD DURATION: " + ofToString(getRecordedDuration(), 1); str += +"\n";
+
+					// error
+					if (bRecording) {
+						if (recorder.getAvgTimeSave() == 0) {
+							std::string ss;
+							const int p = 30;// blink period in frames
+							int fn = ofGetFrameNum() % p;
+							if (fn < p / 2) ss = "ERROR RECORDING!";
+							else ss = "";
+							str += ss + "\n";
+						}
+					}
+				}
+				else if (bRecPrepared || isThreadRunning())// mounted or running ffmpeg script
+				{
+					str += "F9 : START Recording\n";
+					str += "F8 : UnMount Recorder\n";
+					if ((!bFfmpegLocated) && ofGetFrameNum() % 60 < 20) str += "> ALERT! Missing ffmpeg.exe...\n";
+					else str += "\n";
+
+					// animated points..
+					const int p = 30;// period in frames
+					int fn = ofGetFrameNum() % (p * 4);
+					bool b0, b1, b2;
+					b0 = (fn > p * 3);
+					b1 = (fn > p * 2);
+					b2 = (fn > p * 1);
+					string sp = "";
+					if (b0) sp += ".";
+					if (b1) sp += ".";
+					if (b2) sp += ".";
+
+					if (isThreadRunning()) { str += "> BUILDING STILLS TO VIDEO" + sp; str += "\n"; }
+					else {
+						str += "> MOUNTED! READY" + sp; str += "\n";
+						if (b1 || b2) { str += "> PRESS F9 TO START CAPTURE"; }
+						str += "\n";
+						str += "> PRESS F11 TO RUN FFMPEG SCRIPT\n";
+					}
+				}
+			}
 
 			//-
 
-			//draw
+			// draw
 
 			str += info;
 
-			float h = ofxSurfingHelpers2::getHeightBBtextBoxed(font, str);//TODO: ? makes a bad offset..
+			float h = ofxSurfingHelpers2::getHeightBBtextBoxed(font, str);// TODO: ? makes a bad offset..
 
 			y = ofGetHeight() - h - 90;
 
@@ -320,7 +349,7 @@ public:
 
 			//-
 
-			//red circle
+			// red circle
 
 			int yy = y + 50;
 			x += 210;
@@ -369,13 +398,6 @@ public:
 		}
 	}
 
-	////--------------------------------------------------------------
-	//void drawHelp(int x = 50, int y = 50) {
-	//	// help info
-	//	ofDrawBitmapStringHighlight(info, x, y);
-
-	//}
-
 	//--------------------------------------------------------------
 	void keyPressed(ofKeyEventArgs &eventArgs) {///to received short keys control commands
 		if (bActive)
@@ -397,18 +419,18 @@ public:
 				//	setToggleActive();
 				//	break;
 
-				//toggle show info
+				// toggle show info
 			case 'h':
 				setToggleVisibleInfo();
 				break;
 
-				//set full HD
+				// set Full HD
 			case OF_KEY_F5:
 				ofSetWindowShape(1920, 1080);
 				windowResized(1920, 1080);
 				break;
 
-				//set instagram size
+				// set instagram size
 			case OF_KEY_F6:
 			{
 				int w, h;
@@ -423,12 +445,12 @@ public:
 			}
 			break;
 
-			//refresh window size to update fbo settings
+			// refresh window size to update fbo settings
 			case OF_KEY_F7:
 				windowResized(ofGetWidth(), ofGetHeight());
 				break;
 
-				//mount prepare record
+				// mount prepare record
 			case OF_KEY_F8:
 			{
 				bRecPrepared = !bRecPrepared;
@@ -436,17 +458,17 @@ public:
 			}
 			break;
 
-			//start recording
+			// start recording
 			case OF_KEY_F9:
 			{
-				if (bRecording)//do stop
+				if (bRecording)// do stop
 				{
 					ofLogWarning(__FUNCTION__) << "Stop Recording";
 
 					//bRecPrepared = false;
 					bRecording = false;
 				}
-				else//do start
+				else// do start
 				{
 					bRecording = true;
 					timeStart = ofGetElapsedTimeMillis();
@@ -455,7 +477,7 @@ public:
 			}
 			break;
 
-			//take screenshot
+			// take screenshot
 			case OF_KEY_F10:
 			{
 				string _fileName = "snapshot_" + ofGetTimestampString() + ".png";
@@ -470,14 +492,14 @@ public:
 			}
 			break;
 
-			//join stills to video after capture
+			// join stills to video after capture
 			case OF_KEY_F11:
 			{
-				doBuildFFmpeg();
+				doRunFFmpegCommand();
 			}
 			break;
 
-			//remove all captures stills
+			// remove all captures stills
 			case OF_KEY_BACKSPACE: // ctrl + alt + backspace
 				if (!mod_COMMAND && !mod_SHIFT && mod_ALT && mod_CONTROL)
 				{
@@ -493,16 +515,19 @@ public:
 	}
 
 	//--------------------------------------------------------------
-	void windowResized(int w, int h) {///must be called to resize the fbo and video resolution
+	void windowResized(int w, int h) {// must be called to resize the fbo and video resolution
 		cap_w = w;
 		cap_h = h;
 		buildAllocateFbo();
+
+		// TODO: trying to allow resize..
+		// this brakes the capturer...
 		//buildRecorder();
 	}
 
 private:
 	//--------------------------------------------------------------
-	void buildInfo() {///must be called after bitrate, framerate and size w/h are setted
+	void buildInfo() {// must be called after bitrate, framerate and size w/h are setted
 
 		//build help info
 		info = "\n";
@@ -512,9 +537,9 @@ private:
 		info += "F6 : Set optimal Instagram size"; info += "\n";
 		info += "F7 : Refresh Window size"; info += "\n";
 		info += "F8 : Mount Recorder"; info += "\n";
-		info += "F9 : Start Recording"; info += "\n";
+		info += "F9 : Start/Stop Recording"; info += "\n";
 		info += "F10: Capture Screenshot"; info += "\n";
-		info += "F11: Join Stills to video"; info += "\n";
+		info += "F11: Run FFmpeg join video"; info += "\n";
 		info += "Ctrl+Alt+BackSpace: Clear Stills ";// info += "\n";
 		//info += "path Stills     : "+ _pathFolderStills; info += "\n";
 		//info += "path Screenshots: "+ _pathFolderSnapshots; info += "\n";
@@ -539,9 +564,6 @@ private:
 
 			cout << "> Starting join all stills (.tif) to a video file (.mp4)...";
 
-			// used template to join stills:
-			// ffmpeg -r 60 -f image2 -s 1920x1080 -i %05d.tif -c:v libx264 -preset veryslow -qp 0 output.mp4 // lossless
-
 			stringstream cmd;
 			stringstream ffmpeg;
 			stringstream filesSrc;
@@ -560,15 +582,38 @@ private:
 			nameDest << "output_" << ofGetTimestampString() << ".mp4"; // "output.mp4";
 			fileOut << pathDest.str().c_str() << nameDest;
 
+			//-
+
+			// used template to join stills:
+
+			// template 1:
+			// this  intended to be a lossless preset
+			// ffmpeg -r 60 -f image2 -s 1920x1080 -i %05d.tif -c:v libx264 -preset veryslow -qp 0 output.mp4 // lossless
+
+			// template 2:
+			// TODO: search for a GPU encoder script...
+			// https://developer.nvidia.com/blog/nvidia-ffmpeg-transcoding-guide/
+
 			// command:
-			cmd << ffmpeg << " -r 60 -f image2 -s 1920x1080 -i " << filesSrc << " -c:v libx264 -preset veryslow -qp 0 " << fileOut;
+
+			// template 1: (cpu)
+			if (!bUseFfmpegNvidiaGPU)
+				cmd << ffmpeg << " -r 60 -f image2 -s 1920x1080 -i " << filesSrc << " -c:v libx264 -preset veryslow -qp 0 " << fileOut;
+
+			// template 2: (Nvidia gpu)
+			else if (bUseFfmpegNvidiaGPU)
+				cmd << ffmpeg << " -r 60 -f image2 -s 1920x1080 -i " << filesSrc << " -c:v h264_nvenc -b:v 5M " << fileOut;
+			//cmd << ffmpeg << " -r 60 -f image2 -s 1920x1080 -i " << filesSrc << " -c:v h264_nvenc -qp 0 " << fileOut;
+			//cmd << ffmpeg << " -vsync 0 -hwaccel cuvid -c:v h264_cuvid -i " << filesSrc << " -c:a copy -c:v h264_nvenc -b:v 5M " << fileOut;
+
+			//-
 
 			cout << endl << endl;
-			cout << "> ffmpeg : " << endl << ffmpeg.str().c_str();
+			cout << "> ffmpeg.exe : " << endl << ffmpeg.str().c_str();
 			cout << endl << endl;
 			cout << "> Source : " << endl << filesSrc.str().c_str();
 			cout << endl << endl;
-			cout << "> Out    : " << endl << fileOut.str().c_str();
+			cout << "> Out : " << endl << fileOut.str().c_str();
 			cout << endl << endl;
 			cout << "> Command: " << endl << cmd.str().c_str();
 			cout << endl << endl;
@@ -577,7 +622,7 @@ private:
 
 			// run
 			slog = ofSystem(cmd.str().c_str());
-			cout << endl <<  "> Log: " << endl << slog << endl;
+			cout << endl << "> Log: " << endl << slog << endl;
 
 			//-
 
@@ -605,7 +650,7 @@ private:
 			cout << "> Then probably you need to set your ofApp.exe settings to run as Administrator:" << endl;
 			cout << "> Use Windows File Explorer file properties / Change settings for all users / compatibility." << endl;
 			cout << "> This is to allow run ffmpeg.exe and access to files from here!" << endl;
-			
+
 			//--
 
 			// some examples

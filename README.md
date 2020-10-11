@@ -7,11 +7,11 @@ ofxSurfingCapturer
 # Two alternatives
 Includes **two** different **independent** classes:  
 
-- 1. **ofxSurfing_CaptureWindowStills.h**  
+1. **ofxSurfing_CaptureWindowStills.h**  
 The recommended option: It's much faster bc captures still (.tif) frames using threading.  
 Based on: **ofxTextureRecorder**.  
 
-- 2. **ofxSurfing_CaptureWindowFFMPEG.h**  
+2. **ofxSurfing_CaptureWindowFFMPEG.h**  
 One-Step option: Encodes to video live, so it's slower in some machines.  
 Based on: **ofxFFmpegRecorder** and **ofxFastFboReader**.
 
@@ -22,14 +22,13 @@ Uses ofxSurfing_CaptureWindowStills.h
 
 ### HOW TO / WORKFLOW 
 1. **F8** : Mounts/prepare the capturer...  
-![image](/readme_images/Capture1.PNG?raw=true "image") 
 
 2. **F9** : START Recording!
 ![image](/readme_images/Capture2.PNG?raw=true "image")  
 
 3. **F9** : STOP Recording.  
 
-4. **F11** : Run the FFmpeg script to join all the still frames (.tif -> .mp4).  
+4. **F11** : Run the FFmpeg script to join all the still frames (xxxx.tif -> out.mp4).  
 
 5. Your videoplayer will auto-start opening the new created video!  
 ![image](/readme_images/Capture3.PNG?raw=true "image")
@@ -47,10 +46,10 @@ Uses ofxSurfing_CaptureWindowFFMPEG.h
 
 ## Features
 - **Faster** than other alternatives that capture vide (not "raw" still frames).
-- **User controls** to handle all the capture workflow:  
+- **Key commands** to handle all the capture workflow:  
 1. **Mount** (F8)  
 2. **Record** (F9)  
-3. Take **PNG Snapshot** (F10)  
+3. **Take PNG Snapshot** (F10)  
 4. **Clear** all stills (Ctrl+Alt+BackSpace)
 5. **Auto-call batch FFmpeg** *stills_to_video* compression after capture (F11),  
 auto-opens video with your video player.
@@ -97,6 +96,7 @@ https://github.com/NickHardeman/ofxFastFboReader.git
 - To batch-join stills (.tif) to video (.mp4) requires your own **ffmpeg.exe** binary.
 - TODO: Should improve data path to use default ofDataPath...
 - TODO: Check if window resize don't breaks Fbo capturer size... 
+- TODO: BUG: Fbo on 3D depth scenes...
 
 ## Tested systems
 - **Windows10** / **VS2017** / **OF 0.11**
