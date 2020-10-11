@@ -3,11 +3,11 @@
 #include "ofMain.h"
 
 // TODO: 
-// + allow change window capture size without breaking the capturer
+// + check/allow change window capture size without breaking the capturer
 
 ///----
 ///
-#define INCLUDE_RECORDER
+//#define USE_3D_DEPTH
 ///
 ///----
 
@@ -147,6 +147,14 @@ public:
 		cap_Fbo_Settings.internalformat = GL_RGB;
 		cap_Fbo_Settings.width = cap_w;
 		cap_Fbo_Settings.height = cap_h;
+
+#ifdef USE_3D_DEPTH
+		cap_Fbo_Settings.useDepth = true;// required to enable depth test
+		cap_Fbo_Settings.numSamples = 16;// antialias //BUG: like on ofxFastFboReader requires an aux blitFbo... ??
+		//cap_Fbo_Settings.useStencil = true;
+		//cap_Fbo_Settings.depthStencilAsTexture = true;
+		//cap_Fbo_Settings.maxFilter
+#endif
 		cap_Fbo.allocate(cap_Fbo_Settings);
 	}
 	//--------------------------------------------------------------
@@ -304,7 +312,7 @@ public:
 			str += info;
 
 			float h = ofxSurfingHelpers2::getHeightBBtextBoxed(font, str);//TODO: ? makes a bad offset..
-			
+
 			y = ofGetHeight() - h - 90;
 
 			ofxSurfingHelpers2::drawTextBoxed(font, str, x, y);
@@ -515,17 +523,23 @@ private:
 	// join all stills to a video file
 	//--------------------------------------------------------------
 	void threadedFunction() {
-		ofLogWarning(__FUNCTION__) << " Must run as Adniministrator!" << endl;
-		cout << (__FUNCTION__) << " Must run as Adniministrator!" << endl;
+		cout << "--------------------------------------------------------------" << endl;
+		ofLogWarning(__FUNCTION__) << endl;
+		cout << (__FUNCTION__) << endl;
 
-		////while (isThreadRunning()) {
+		string warninglog = "";
+		warninglog += "> WARNING! ofApp.exe must run as Administrator !\n";
+		warninglog += "> WARNING! ffmpeg.exe must be located on: " + pathRoot + "/ffmpeg.exe !\n";
+
+		cout << endl << warninglog << endl;
+
 		if (isThreadRunning())
 		{
 			// build ffmpeg command
 
-			cout << "> Starting join all stills to a video file " << endl;
+			cout << "> Starting join all stills (.tif) to a video file (.mp4)...";
 
-			// template to join stills
+			// used template to join stills:
 			// ffmpeg -r 60 -f image2 -s 1920x1080 -i %05d.tif -c:v libx264 -preset veryslow -qp 0 output.mp4 // lossless
 
 			stringstream cmd;
@@ -550,17 +564,20 @@ private:
 			cmd << ffmpeg << " -r 60 -f image2 -s 1920x1080 -i " << filesSrc << " -c:v libx264 -preset veryslow -qp 0 " << fileOut;
 
 			cout << endl << endl;
-			cout << "ffmpeg : " << ffmpeg.str().c_str();
+			cout << "> ffmpeg : " << endl << ffmpeg.str().c_str();
 			cout << endl << endl;
-			cout << "Source : " << filesSrc.str().c_str();
+			cout << "> Source : " << endl << filesSrc.str().c_str();
 			cout << endl << endl;
-			cout << "Out    : " << fileOut.str().c_str();
+			cout << "> Out    : " << endl << fileOut.str().c_str();
 			cout << endl << endl;
-			cout << "Command: " << cmd.str().c_str();
+			cout << "> Command: " << endl << cmd.str().c_str();
 			cout << endl << endl;
 
+			string slog;
+
 			// run
-			cout << ofSystem(cmd.str().c_str()) << endl;
+			slog = ofSystem(cmd.str().c_str());
+			cout << endl <<  "> Log: " << endl << slog << endl;
 
 			//-
 
@@ -569,14 +586,26 @@ private:
 			//cout << "repeat" << endl;
 
 			cout << endl;
-			cout << "> Done video encoding into: " << fileOut.str().c_str();
-			cout << endl;
+			cout << "> Done/Trying video encoding into: " << endl << fileOut.str().c_str();
+			cout << endl << endl;
+			cout << "--------------------------------------------------------------" << endl << endl;
 
 			//-
 
 			// open video
-			cout << ofSystem(fileOut.str().c_str()) << endl;
+			slog = ofSystem(fileOut.str().c_str());
+			cout << slog << endl;
 
+			// error seems to print this:
+			//" is not recognized as an internal or external command,
+			//operable program or batch file."
+
+			cout << "> WARNING: if output video is not opened NOW, and getting above an error like:" << endl;
+			cout << "\t'is not recognized as an internal or external command, operable program or batch file.'" << endl;
+			cout << "> Then probably you need to set your ofApp.exe settings to run as Administrator:" << endl;
+			cout << "> Use Windows File Explorer file properties / Change settings for all users / compatibility." << endl;
+			cout << "> This is to allow run ffmpeg.exe and access to files from here!" << endl;
+			
 			//--
 
 			// some examples
@@ -591,10 +620,6 @@ private:
 			//someCmd << "dir";
 			//cout << someCmd << endl;
 			//cout << ofSystem(someCmd.str().c_str()) << endl;
-
-			//-
-
 		}
-		//else waitForThread(true);
 	}
 };
