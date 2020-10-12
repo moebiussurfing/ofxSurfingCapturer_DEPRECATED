@@ -128,15 +128,13 @@ public:
 
 		//fbo
 		{
-			cap_Fbo_Settings.internalformat = GL_RGB;
-			//cap_Fbo_Settings.internalformat = GL_RGB32F;
+			cap_Fbo_Settings.internalformat = GL_RGB;//GL_RGB32F;
 
 			cap_Fbo_Settings.width = cap_w;
 			cap_Fbo_Settings.height = cap_h;
 
-			cap_Fbo_Settings.numSamples = 16; //BUG: on ofxFastFboReader requires an aux blitFbo...
+			cap_Fbo_Settings.numSamples = 16; // BUG: on ofxFastFboReader requires an aux blitFbo...
 			cap_Fbo_Settings.useDepth = true;
-
 			//cap_Fbo_Settings.useStencil = true;
 			//cap_Fbo_Settings.depthStencilAsTexture = true;
 			//cap_Fbo_Settings.maxFilter
@@ -144,9 +142,8 @@ public:
 			cap_Fbo.allocate(cap_Fbo_Settings);
 		}
 
-		//TEST: BUG: antialias
-		blitFbo.allocate(cap_Fbo.getWidth(), cap_Fbo.getHeight(), GL_RGB);
-		//blitFbo.allocate(cap_Fbo.getWidth(), cap_Fbo.getHeight(), GL_RGB32F);
+		//TEST: BUG: depth/antialias
+		blitFbo.allocate(cap_Fbo.getWidth(), cap_Fbo.getHeight(), GL_RGB);//GL_RGB32F);
 
 		/*
 		//-
@@ -184,6 +181,8 @@ public:
 		//--
 
 		// some fffmpeg presets
+
+		// TODO: may add some ffmpeg gpu commands to make it faster...
 
 		//// 1. instagram
 		//cap_Bitrate = 28000;

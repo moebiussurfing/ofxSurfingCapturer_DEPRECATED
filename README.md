@@ -28,7 +28,7 @@ Uses ofxSurfing_CaptureWindowStills.h
 
 3. **F9** : STOP Recording.  
 
-4. **F11** : Run the FFmpeg script to join all the still frames (xxxx.tif -> out.mp4).  
+4. **F11** : Run the FFmpeg script to join all the still frames (xxxxx.tif -> out.mp4).  
 
 5. Your videoplayer will auto-start opening the new created video!  
 ![image](/readme_images/Capture3.PNG?raw=true "image")
@@ -93,7 +93,7 @@ https://github.com/NickHardeman/ofxFastFboReader.git
 
 ## Notes
 - Includes some **FFmpeg** scripts, links and a Windows compiled *ffmpeg.exe*.
-- To batch-join stills (.tif) to video (.mp4) requires your own **ffmpeg.exe** binary.
+- To batch-join stills (xxxxx.tif) to video (out.mp4) requires your own **ffmpeg.exe** binary.
 - TODO: Should improve data path to use default ofDataPath...
 - TODO: Check if window resize don't breaks Fbo capturer size... 
 - TODO: BUG: Fbo on 3D depth scenes...
