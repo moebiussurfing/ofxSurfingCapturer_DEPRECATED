@@ -8,11 +8,11 @@ ofxSurfingCapturer
 Includes **two** different **independent** classes:  
 
 1. **ofxSurfing_CaptureWindowStills.h**  
-The recommended option: It's much faster bc captures still (.tif) frames using threading.  
+It's much faster because captures still frames (.tif) using threading + FFmpeg video (.mp4) encoding.  
 Based on: **ofxTextureRecorder**.  
 
 2. **ofxSurfing_CaptureWindowFFMPEG.h**  
-One-Step option: Encodes to video live, so it's slower in some machines.  
+Alternative OneStep option: Live Encodes to video, so it's slower in some machines.  
 Based on: **ofxFFmpegRecorder** and **ofxFastFboReader**.
 
 ## Screenshots
@@ -45,8 +45,10 @@ Uses ofxSurfing_CaptureWindowFFMPEG.h
 ![image](/readme_images/Capture4.PNG?raw=true "image")
 
 ## Features
-- **Faster** than other alternatives that capture vide (not "raw" still frames).
-- **Key commands** to handle all the capture workflow:  
+- **Faster** than other video alternatives (vs "raw" still frames + encode).
+- **GPU Hardware accelerated** (or CPU) video encoding. (Nvidia only yet) 
+- Selectable image format: *PNG*, *jpg*, ...etc. *tif* by default.  
+- **Key commands** to handle all the workflow:  
 1. **Mount** (F8)  
 2. **Record** (F9)  
 3. **Take PNG Snapshot** (F10)  
@@ -93,10 +95,11 @@ https://github.com/NickHardeman/ofxFastFboReader.git
 
 ## Notes
 - Includes some **FFmpeg** scripts, links and a Windows compiled *ffmpeg.exe*.
-- To batch-join stills (xxxxx.tif) to video (out.mp4) requires your own **ffmpeg.exe** binary.
+- To batch-join stills (xxxxx.tif) to video (out.mp4) requires (included) **ffmpeg.exe** binary.
+- TODO: Add macOS FFmpeg binary.
 - TODO: Should improve data path to use default ofDataPath...
 - TODO: Check if window resize don't breaks Fbo capturer size... 
-- TODO: BUG: Fbo on 3D depth scenes...
+- TODO: Include GPU AMD FFmpeg script...
 
 ## Tested systems
 - **Windows10** / **VS2017** / **OF 0.11**
