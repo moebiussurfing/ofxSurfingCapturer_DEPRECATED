@@ -662,8 +662,10 @@ private:
 			// 1. prepare source and basic settings: auto overwrite file, fps, size, stills source
 			cmd << ffmpeg << " -y -f image2 -i " << filesSrc.str().c_str() << " ";
 			cmd << "-r 60 ";// framerate
+
+			// we can resize too or mantain the original window size
 			//cmd << "-s hd1080 ";
-			cmd << "-s 1920x1080 ";
+			//cmd << "-s 1920x1080 ";
 
 			// 2. append encoding settings
 			// template 1: (CPU)
