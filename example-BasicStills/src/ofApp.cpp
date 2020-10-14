@@ -5,59 +5,49 @@ void ofApp::setup() {
 	ofSetFrameRate(60);
 
 	// scene
-
 	ofSetCircleResolution(300);
 	halfx = ofGetWidth() / 2;
 	halfy = ofGetHeight() / 2;
 	pos = glm::vec2(halfx, halfy);
 
-	//-
-
-	// TODO: testing to simplify...
-	// set /rootPath/
-	//cout << defaultWorkingDirectory();
-	//cout << ofEnableDataPath
-	//cout << ofToDataPath
-	//capturer.setPathRoot(ofToDataPath());
-
 	//--
 
 	// capturer
 
-	capturer.setPathRoot("F:\\openFrameworks\\addons\\ofxSurfingCapturer\\example-BasicStills\\bin\\data\\");
-	// path
-	// "ffmpeg.exe" -> must be located on /rootPath/
-	// look for /Snapshots/ and /Stills/ on there
-	// converted output video "output_2020-10-10-03-48-49-172.mp4" will be placed into: /pathRoot/captures/
+	// default /rootPath/ is /bin/data/.
+	// "ffmpeg.exe" -> must be located on /rootPath/.
+	// converted output video output.mp4 will be placed into: /rootPath/Captures/.
+	// /Captures/Snapshots/ and /Captures/Stills/ will be located on there.
+	// This path can be customizable before call setup(), and should looks like:
+	//capturer.setPathRoot("F:\\openFrameworks\\addons\\ofxSurfingCapturer\\example-BasicStills\\bin\\data\\");
 	
 	capturer.setup(); 
-	// customizable destination, ffmpeg.exe and IMAGE_FORMAT
-	// default destination is bin/data/captures
-	// default image format is TIFF
+	// customizable using arguments: destination, ffmpeg.exe and IMAGE_FORMAT.
+	// default destination is bin/data/Captures. default image format is TIFF.
 
 	//capturer.setActive(false); 
-	// make gui visible. visible by default
+	// make gui hidden/visible. visible by default.
 
-	// customize FFmpeg script
+	// customizable FFmpeg script:
 	//capturer.setFFmpegScript("-r 60 -c:v h264_nvenc -b:v 25M -crf 20 -preset slow");
-	// this is the interal harcoded GPU script. 
-	// when you customize this script take care of not adding ffmpeg.exe, source, out...etc because they are already included 
+	// this is the same interal harcoded GPU script. 
+	// when you customize this script, take care of not duplicate things, re adding ffmpeg.exe, source, out...etc because they are already included !
 
 	//capturer.setFfpmegGpu(false); 
 	// Nvidia GPU HW accelerated is enabled by default. 
-	// disable if you have AMD GPU or you prefer slower CPU encoding
+	// disable if you have an AMD GPU or you prefer CPU encoding
 	
 	//capturer.setOverwriteVideoOut(false); 
-	// true by default. overwirtes out.mp4 file. 
-	// set to false to allow add timestamp to filenames
+	// true by default. overwirtes output.mp4 file. 
+	// when setted to false will add timestamp to filename.
 }
 
 //--------------------------------------------------------------
 void ofApp::update() {
 	// scene
 	float w = 100;
-	val = (ofGetFrameNum() % 120) / 120.f;// value from 0 to 1 in 2 secconds at 60 fps
-	if ((ofGetFrameNum() % 60) == 0)//randomize 
+	val = (ofGetFrameNum() % 120) / 120.f;// value from 0 to 1 in 2 seconds at 60 fps
+	if ((ofGetFrameNum() % 60) == 0)// randomize position every second
 	{
 		pos = glm::vec2(ofRandom(halfx - w, halfx + w), ofRandom(halfy - w, halfy + w));
 		size = ofRandom(1,10);
@@ -88,10 +78,9 @@ void ofApp::draw() {
 		ofPopStyle();
 	}
 	capturer.end();
-
 	capturer.draw();// draw scene
 
-	capturer.drawInfo();
+	capturer.drawInfo();// gui help
 }
 
 //--------------------------------------------------------------

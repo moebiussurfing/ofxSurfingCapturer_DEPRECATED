@@ -34,7 +34,7 @@ public:
 private:
 	bool bDepth3D = true;
 	// BUG solved: when using antialias/depth we get "black screen"
-	ofFbo blitFbo;// we need this fbo to solve the bug
+	ofFbo blitFbo;// we need this aux fbo to solve the bug
 
 private:
 	bool bOverwriteOutVideo = true;// we only want the last video. we use same name for all re takes
@@ -54,11 +54,6 @@ public:
 public:
 	//--------------------------------------------------------------
 	void setPathRoot(std::string path) {
-		// NOTES:
-		//Poco::Path dataFolder(ofToDataPath("", true));
-		//ofToDataPath()
-		//std::filesystem::path("some/path") == std::filesystem::path("some//path")
-
 		pathRoot = path;
 	}
 
@@ -79,7 +74,7 @@ public:
 		cap_w = 1920;
 		cap_h = 1080;
 
-		_pathFolderCaptures = "captures\\";
+		_pathFolderCaptures = "Captures\\";
 		_pathFolderStills = _pathFolderCaptures + "Stills\\";
 		_pathFolderSnapshots = _pathFolderCaptures + "Snapshots\\";
 
@@ -87,8 +82,8 @@ public:
 		string _font = "assets/fonts/overpass-mono-bold.otf";
 		font.load(_font, 8);
 
-		// TODO:
-		//pathRoot = ofToDataPath("", false);
+		// default root path is /bin/data/
+		setPathRoot(ofToDataPath("\\", true));
 	};
 
 	//--------------------------------------------------------------
@@ -151,17 +146,17 @@ private:
 public:
 	//--------------------------------------------------------------
 	//call with the path folder if you want to customize
-	void setup(std::string path = "captures\\", ofImageFormat format = OF_IMAGE_FORMAT_TIFF) {
+	void setup(std::string path = "Captures\\", ofImageFormat format = OF_IMAGE_FORMAT_TIFF) {
 		ofLogWarning(__FUNCTION__) << "path: " << path << " ofImageFormat: " << format;
 
 		// we can select a still format passing one ofImageFormat like this ones:
-		//	OF_IMAGE_FORMAT_BMP = 0,
-		//	OF_IMAGE_FORMAT_JPEG = 2,
-		//	OF_IMAGE_FORMAT_PNG = 13,
-		//	OF_IMAGE_FORMAT_TIFF = 18,
-		//	OF_IMAGE_FORMAT_RAW = 34
+		// OF_IMAGE_FORMAT_BMP = 0,
+		// OF_IMAGE_FORMAT_JPEG = 2,
+		// OF_IMAGE_FORMAT_PNG = 13,
+		// OF_IMAGE_FORMAT_TIFF = 18,
+		// OF_IMAGE_FORMAT_RAW = 34
 
-		_pathFolderCaptures = path; // "captures\\"
+		_pathFolderCaptures = path; // "Captures\\"
 		_pathFolderStills = _pathFolderCaptures + "Stills\\";
 		_pathFolderSnapshots = _pathFolderCaptures + "Snapshots\\";
 
@@ -194,7 +189,7 @@ public:
 
 public:
 	//--------------------------------------------------------------
-	void buildAllocateFbo() {//cap_w and cap_h must be updated
+	void buildAllocateFbo() {// cap_w and cap_h must be updated before call
 		ofLogWarning(__FUNCTION__) << cap_w << ", " << cap_h;
 
 		cap_Fbo_Settings.internalformat = GL_RGB;
@@ -205,8 +200,6 @@ public:
 		if (bDepth3D) {
 			cap_Fbo_Settings.useDepth = true;// required to enable depth test
 			cap_Fbo_Settings.numSamples = (int)ANTIALIAS_NUM_SAMPLES;// antialias 
-			// BUG: seems like on ofxFastFboReader, requires an aux blitFbo... ??
-			// this can be copied from ofxSurfing_CaptureWindowFFMPEG.h
 			//cap_Fbo_Settings.useStencil = true;
 			//cap_Fbo_Settings.depthStencilAsTexture = true;
 			//cap_Fbo_Settings.maxFilter
@@ -379,7 +372,6 @@ public:
 			str += info;
 
 			float h = ofxSurfingHelpers2::getHeightBBtextBoxed(font, str);// TODO: ? makes a bad offset..
-
 			y = ofGetHeight() - h - 90;
 
 			ofxSurfingHelpers2::drawTextBoxed(font, str, x, y);
@@ -539,11 +531,9 @@ public:
 				}
 				else
 				{
-					// TODO: stop
-					// stop
-					stopThread();
-					// stop the thread on exit
-					//waitForThread(true);
+					// TODO: BUG:
+					// when called stop, must restart the app...
+					if (isThreadRunning()) stopThread();
 				}
 			}
 			break;
@@ -770,6 +760,8 @@ private:
 			cout << endl;
 			cout << "> Done/Trying video encoding into: " << endl << fileOut.str().c_str();
 			cout << endl << endl;
+			cout << "> WARNING: Close your videoplayer to unblock allow close the app !";
+			cout << endl << endl;
 			cout << "--------------------------------------------------------------" << endl << endl;
 
 			//-
@@ -786,7 +778,7 @@ private:
 			//" is not recognized as an internal or external command,
 			//operable program or batch file."
 
-			cout << "> WARNING: if output video is not opened NOW, and getting above an error like:" << endl;
+			cout << "> WARNING: If output video is not opened NOW, and getting above an error like:" << endl;
 			cout << "\t'is not recognized as an internal or external command, operable program or batch file.'" << endl;
 			cout << "> Then probably you need to set your ofApp.exe settings to run as Administrator:" << endl;
 			cout << "> Use Windows File Explorer file properties / Change settings for all users / compatibility." << endl;
