@@ -22,8 +22,18 @@ private:
 	ofTrueTypeFont font;
 
 	bool bFfmpegLocated = false;
+	bool bFfmpegCustomScript = false;
+	std::string ffmpegScript;
+public:
+	//--------------------------------------------------------------
+	void setFFmpegScript(std::string sscript) {// if this is setted, the other hardcoded CPU/GPU aren't used at all
+		bFfmpegCustomScript = true;
+		ffmpegScript = sscript;
+	}
+
+private:
 	bool bDepth3D = true;
-	//TEST: BUG: when using antialias/depth we get "black screen"
+	// BUG solved: when using antialias/depth we get "black screen"
 	ofFbo blitFbo;// we need this fbo to solve the bug
 
 private:
@@ -104,7 +114,7 @@ private:
 	bool bShowInfo = true;
 
 public:
-	ofParameter<bool> bActive{ "Window Capturer", false };// public to integrate into your ofApp gui
+	ofParameter<bool> bActive{ "Window Capturer", true };// public to integrate into your ofApp gui
 	//--------------------------------------------------------------
 	void setActive(bool b) {
 		bActive = b;
@@ -286,7 +296,7 @@ public:
 			// 1. waiting mount: press F8
 			if (!bRecPrepared && !isThreadRunning() && !bRecording)
 			{
-				str += "F8 : MOUNT Recorder"; str += "\n";
+				str += "F8 : MOUNT Recorder\n";
 
 				//animated points..
 				const int p = 30;//period in frames
@@ -300,22 +310,22 @@ public:
 				if (b1) sp += ".";
 				if (b2) sp += ".";
 
-				str += "> PRESS F8" + sp; str += "\n";
+				str += "> PRESS F8" + sp + "\n";
 			}
 			// 2. mounted, recording or running ffmpeg script
 			else if (bRecPrepared || bRecording || isThreadRunning())
 			{
 				// cap info
 				str += "FPS " + ofToString(ofGetFrameRate(), 0) + "   " + ofToString(recorder.getFrame()) + " frames\n";
-				str += "WINDOW   " + ofToString(ofGetWidth()) + "x" + ofToString(ofGetHeight()); str += +"\n";
-				str += "FBO SIZE " + ofToString(cap_w) + "x" + ofToString(cap_h); str += +"\n";
-				str += "RECORDER " + ofToString(recorder.getWidth()) + "x" + ofToString(recorder.getHeight());
-				str += +"\n\n";
+				str += "WINDOW   " + ofToString(ofGetWidth()) + "x" + ofToString(ofGetHeight()) + "\n";
+				str += "FBO SIZE " + ofToString(cap_w) + "x" + ofToString(cap_h) + "\n";
+				str += "RECORDER " + ofToString(recorder.getWidth()) + "x" + ofToString(recorder.getHeight()) + "\n";
+				str += +"\n";
 
 				if (bRecording)
 				{
 					str += "F9 : STOP Recording\n";
-					str += "RECORD DURATION: " + ofToString(getRecordedDuration(), 1); str += +"\n";
+					str += "RECORD DURATION: " + ofToString(getRecordedDuration(), 1) + "\n";
 
 					// error
 					if (bRecording) {
@@ -333,8 +343,8 @@ public:
 				{
 					str += "F9 : START Recording\n";
 					str += "F8 : UnMount Recorder\n";
-					if ((!bFfmpegLocated) && ofGetFrameNum() % 60 < 20) str += "> ALERT! Missing ffmpeg.exe...\n";
-					else str += "\n";
+					if ((!bFfmpegLocated) && ofGetFrameNum() % 60 < 20) str += "> ALERT! Missing ffmpeg.exe...";
+					str += "\n";
 
 					// animated points..
 					const int p = 30;// period in frames
@@ -354,7 +364,7 @@ public:
 					}
 
 					else {
-						str += "> MOUNTED! READY" + sp; str += "\n";
+						str += "> MOUNTED! READY" + sp + "\n";
 						if (b1 || b2) { str += "> PRESS F9 TO START CAPTURE"; }
 						str += "\n";
 						str += "> PRESS F11 TO RUN FFMPEG SCRIPT\n";
@@ -417,10 +427,10 @@ public:
 			{
 				if (ofGetFrameNum() % 60 == 0) {
 					ofLogWarning(__FUNCTION__) << ofGetFrameRate();
-					ofLogWarning(__FUNCTION__) << "texture copy: " << recorder.getAvgTimeTextureCopy();
-					ofLogWarning(__FUNCTION__) << "gpu download: " << recorder.getAvgTimeGpuDownload();
-					ofLogWarning(__FUNCTION__) << "image encoding: " << recorder.getAvgTimeEncode();
-					ofLogWarning(__FUNCTION__) << "file save: " << recorder.getAvgTimeSave() << endl;
+					ofLogWarning(__FUNCTION__) << "Texture copy   : " << recorder.getAvgTimeTextureCopy();
+					ofLogWarning(__FUNCTION__) << "GPU download   : " << recorder.getAvgTimeGpuDownload();
+					ofLogWarning(__FUNCTION__) << "Image encoding : " << recorder.getAvgTimeEncode();
+					ofLogWarning(__FUNCTION__) << "File save	  : " << recorder.getAvgTimeSave() << endl;
 				}
 			}
 		}
@@ -523,7 +533,18 @@ public:
 			// join stills to video after capture
 			case OF_KEY_F11:
 			{
-				doRunFFmpegCommand();
+				if (!isThreadRunning())
+				{
+					doRunFFmpegCommand();
+				}
+				else
+				{
+					// TODO: stop
+					// stop
+					stopThread();
+					// stop the thread on exit
+					//waitForThread(true);
+				}
 			}
 			break;
 
@@ -629,85 +650,118 @@ private:
 
 			//-
 
-			// template A: CPU
-			// this  intended to be a lossless preset
-			// ffmpeg -r 60 -f image2 -s 1920x1080 -i %05d.tif -c:v libx264 -preset veryslow -qp 0 output.mp4 // lossless
-
-			//-
-
-			// template B: GPU
-			// https://developer.nvidia.com/blog/nvidia-ffmpeg-transcoding-guide/
-			// Command Line for Latency-Tolerant High-Quality Transcoding:
-			// "ffmpeg -y -vsync 0 -hwaccel cuda -hwaccel_output_format cuda 
-			// -i input.mp4 -c:a copy  
-			// -c:v h264_nvenc -preset slow -profile high -b:v 5M 
-			// -bufsize 5M -maxrate 10M -qmin 0 -g 250 -bf 3 -b_ref_mode middle -temporal-aq 1 -rc-lookahead 20 -i_qfactor 0.75 -b_qfactor 1.1 
-			// output.mp4"
-			// -hwaccel cuda > Unrecognized hwaccel : cuda. Supported hwaccels : dxva2 qsv cuvid
-
-			// https://forums.guru3d.com/threads/how-to-encode-video-with-ffmpeg-using-nvenc.411509/
-			// If you want lossless encoding use preset = lossless.
-			// cq = number controls quality, lower number means better quality. 
-			// - rc constqp enables constant quality rate mode which in my opinion is really, really handy and I always use it over fixed bitrate modes.
-			// It's really great to see than NVENC supports this mode and on top of that it even supports lossless encoding and yuv444p format. 
-			// On top of that NVENC's constant quality rate mode works surprisingly well, quality wise.
-			// You can also play with - temporal - aq 1 switch (works for AVC) and -spatial_aq 1 switch (works for HEVC).
-			// Add them after - preset % preset%.For AVC you can enable b frames with - b switch.NVIDIA recommended using three b - frames(-b) in one of their pdfs for optimal quality(switch: -b 3).
-			// if your source material is lossless RGB and you want the absolutely best quality, use preset=lossless and uncomment SET videofilter=-pix_fmt yuv444p
-
-			//-
-
-			// build the ffmpeg command:
-
-			// 1. prepare source and basic settings: auto overwrite file, fps, size, stills source
-			cmd << ffmpeg << " -y -f image2 -i " << filesSrc.str().c_str() << " ";
-			cmd << "-r 60 ";// framerate
-
-			// we can resize too or mantain the original window size
-			//cmd << "-s hd1080 ";
-			//cmd << "-s 1920x1080 ";
-
-			// 2. append encoding settings
-			// template 1: (CPU)
-			if (!bUseFfmpegNvidiaGPU) cmdEncodingArgs << "-c:v libx264 -preset veryslow -qp 0 ";
-
-			// template 2: (Nvidia GPU)
-			else if (bUseFfmpegNvidiaGPU)
+			// customized script by user:
+			if (bFfmpegCustomScript)
 			{
-				cmdEncodingArgs << "-c:v h264_nvenc ";// enables GPU hardware accellerated Nvidia encoding. Could check similar arg to AMD..
-				cmdEncodingArgs << "-b:v 25M "; // constant bitrate 25000
-				cmdEncodingArgs << "-crf 20 ";
-				//cmdEncodingArgs << "-vsync 0 ";
-				//cmdEncodingArgs << "-hwaccel cuvid ";
-				//cmdEncodingArgs << "-qp 0 ";
-				cmdEncodingArgs << "-preset slow ";	// 10secs = 30MB
-				//cmdEncodingArgs << "-preset lossless ";	// 10secs = 150MB
-				//cmdEncodingArgs << "-profile high ";
-				//cmdEncodingArgs << "-pix_fmt yuv444p ";// 10secs = 300MB. doubles size! raw format but too heavy weight!
-			}
-			// append
-			cmd << cmdEncodingArgs;
+				// 1. append exe + source files
+				cmd << ffmpeg << " -y -f image2 -i " << filesSrc.str().c_str() << " ";
 
-			// 3. append file output
-			cmd << fileOut.str().c_str();
+				// 2. apend script
+				cmd << ffmpegScript.c_str() << " ";
+
+				// 3. append file output
+				cmd << fileOut.str().c_str();
+
+				//-
+
+				cout << endl << endl;
+				cout << "> CUSTOM FFmpeg SCRIPT" << endl << endl;
+				cout << "> ffmpeg.exe : " << endl << ffmpeg.str().c_str();
+				cout << endl << endl;
+				cout << "> Source: " << endl << filesSrc.str().c_str();
+				cout << endl << endl;
+				cout << "> FFmpeg CustomScript : " << endl << ffmpegScript.c_str();
+				cout << endl << endl;
+				cout << "> Out : " << endl << fileOut.str().c_str();
+				cout << endl << endl;
+				cout << "> Raw Command: " << endl << cmd.str().c_str();
+				cout << endl << endl;
+			}
+			else // hardcoded scripts
+			{
+				// template A: CPU
+				// this  intended to be a lossless preset
+				// ffmpeg -r 60 -f image2 -s 1920x1080 -i %05d.tif -c:v libx264 -preset veryslow -qp 0 output.mp4 // lossless
+
+				//-
+
+				// template B: GPU
+				// https://developer.nvidia.com/blog/nvidia-ffmpeg-transcoding-guide/
+				// Command Line for Latency-Tolerant High-Quality Transcoding:
+				// "ffmpeg -y -vsync 0 -hwaccel cuda -hwaccel_output_format cuda 
+				// -i input.mp4 -c:a copy  
+				// -c:v h264_nvenc -preset slow -profile high -b:v 5M 
+				// -bufsize 5M -maxrate 10M -qmin 0 -g 250 -bf 3 -b_ref_mode middle -temporal-aq 1 -rc-lookahead 20 -i_qfactor 0.75 -b_qfactor 1.1 
+				// output.mp4"
+				// -hwaccel cuda > Unrecognized hwaccel : cuda. Supported hwaccels : dxva2 qsv cuvid
+
+				// https://forums.guru3d.com/threads/how-to-encode-video-with-ffmpeg-using-nvenc.411509/
+				// If you want lossless encoding use preset = lossless.
+				// cq = number controls quality, lower number means better quality. 
+				// - rc constqp enables constant quality rate mode which in my opinion is really, really handy and I always use it over fixed bitrate modes.
+				// It's really great to see than NVENC supports this mode and on top of that it even supports lossless encoding and yuv444p format. 
+				// On top of that NVENC's constant quality rate mode works surprisingly well, quality wise.
+				// You can also play with - temporal - aq 1 switch (works for AVC) and -spatial_aq 1 switch (works for HEVC).
+				// Add them after - preset % preset%.For AVC you can enable b frames with - b switch.NVIDIA recommended using three b - frames(-b) in one of their pdfs for optimal quality(switch: -b 3).
+				// if your source material is lossless RGB and you want the absolutely best quality, use preset=lossless and uncomment SET videofilter=-pix_fmt yuv444p
+
+				//-
+
+				// build the ffmpeg command:
+
+				// 1. prepare source and basic settings: auto overwrite file, fps, size, stills source
+				cmd << ffmpeg << " -y -f image2 -i " << filesSrc.str().c_str() << " ";
+				cmd << "-r 60 ";// framerate
+
+				// we can resize too or mantain the original window size
+				//cmd << "-s hd1080 ";
+				//cmd << "-s 1920x1080 ";
+
+				// 2. append encoding settings
+				// template 1: (CPU)
+				if (!bUseFfmpegNvidiaGPU) cmdEncodingArgs << "-c:v libx264 -preset veryslow -qp 0 ";
+
+				// template 2: (Nvidia GPU)
+				else if (bUseFfmpegNvidiaGPU)
+				{
+					cmdEncodingArgs << "-c:v h264_nvenc ";// enables GPU hardware accellerated Nvidia encoding. Could check similar arg to AMD..
+					cmdEncodingArgs << "-b:v 25M "; // constant bitrate 25000
+					cmdEncodingArgs << "-crf 20 ";
+					//cmdEncodingArgs << "-vsync 0 ";
+					//cmdEncodingArgs << "-hwaccel cuvid ";
+					//cmdEncodingArgs << "-qp 0 ";
+					cmdEncodingArgs << "-preset slow ";	// 10secs = 30MB
+					//cmdEncodingArgs << "-preset lossless ";	// 10secs = 150MB
+					//cmdEncodingArgs << "-profile high ";
+					//cmdEncodingArgs << "-pix_fmt yuv444p ";// 10secs = 300MB. doubles size! raw format but too heavy weight!
+				}
+				// append
+				cmd << cmdEncodingArgs;
+
+				// 3. append file output
+				cmd << fileOut.str().c_str();
+
+				//-
+
+				cout << endl << endl;
+				cout << "> HARDCODED FFmpeg SCRIPT" << endl << endl;
+				cout << "> ffmpeg.exe : " << endl << ffmpeg.str().c_str();
+				cout << endl << endl;
+				cout << "> Source : " << endl << filesSrc.str().c_str();
+				cout << endl << endl;
+				cout << "> Out : " << endl << fileOut.str().c_str();
+				cout << endl << endl;
+				cout << "> Raw Command: " << endl << cmd.str().c_str();
+				cout << endl << endl;
+				cout << "> Quality Encoding arguments: " << endl << cmdEncodingArgs.str().c_str();
+				cout << endl << endl;
+			}
 
 			//-
-
-			cout << endl << endl;
-			cout << "> ffmpeg.exe : " << endl << ffmpeg.str().c_str();
-			cout << endl << endl;
-			cout << "> Source : " << endl << filesSrc.str().c_str();
-			cout << endl << endl;
-			cout << "> Out : " << endl << fileOut.str().c_str();
-			cout << endl << endl;
-			cout << "> Raw Command: " << endl << cmd.str().c_str();
-			cout << endl << endl;
-			cout << "> Quality Encoding arguments: " << endl << cmdEncodingArgs.str().c_str();
-			cout << endl << endl;
-
-			string slog;
 
 			// 4. run video encoding
+
+			std::string slog;
 			slog = ofSystem(cmd.str().c_str());
 			cout << endl << "> Log: " << endl << slog << endl;
 

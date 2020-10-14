@@ -25,6 +25,7 @@ void ofApp::setup() {
 	// capturer
 
 	capturer.setPathRoot("F:\\openFrameworks\\addons\\ofxSurfingCapturer\\example-BasicStills\\bin\\data\\");
+	// path
 	// "ffmpeg.exe" -> must be located on /rootPath/
 	// look for /Snapshots/ and /Stills/ on there
 	// converted output video "output_2020-10-10-03-48-49-172.mp4" will be placed into: /pathRoot/captures/
@@ -34,9 +35,14 @@ void ofApp::setup() {
 	// default destination is bin/data/captures
 	// default image format is TIFF
 
-	capturer.setActive(true); 
-	// make gui visible. hidden by default
-	
+	//capturer.setActive(false); 
+	// make gui visible. visible by default
+
+	// customize FFmpeg script
+	//capturer.setFFmpegScript("-r 60 -c:v h264_nvenc -b:v 25M -crf 20 -preset slow");
+	// this is the interal harcoded GPU script. 
+	// when you customize this script take care of not adding ffmpeg.exe, source, out...etc because they are already included 
+
 	//capturer.setFfpmegGpu(false); 
 	// Nvidia GPU HW accelerated is enabled by default. 
 	// disable if you have AMD GPU or you prefer slower CPU encoding
