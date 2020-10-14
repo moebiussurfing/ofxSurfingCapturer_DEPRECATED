@@ -28,14 +28,14 @@ Uses ofxSurfing_CaptureWindowStills.h
 
 3. **F9** : STOP Recording.  
 
-4. **F11** : Run the FFmpeg script to join all the still frames (xxxxx.tif -> out.mp4).  
+4. **F11** : RUN the FFmpeg script to join all the still frames (xxxxx.tif -> output.mp4).  
 
 5. Your videoplayer will auto-start opening the new created video!  
 ![image](/readme_images/Capture3.PNG?raw=true "image")
 
 6. *Ctrl+Alt+BackSpace*: Remove all still files.  
 
-### Data path and "ffmpeg.exe":
+### Data path structure and "ffmpeg.exe" location:
 ![image](/readme_images/Capture5.PNG?raw=true "image")
 ![image](/readme_images/Capture6.PNG?raw=true "image")
 
@@ -45,16 +45,16 @@ Uses ofxSurfing_CaptureWindowFFMPEG.h
 ![image](/readme_images/Capture4.PNG?raw=true "image")
 
 ## Features
-- **Faster** than other video alternatives (vs "raw" still frames + encode).
+- **Faster** than other video alternatives (bc "raw" still frames + encode).
 - **GPU Hardware accelerated** (or CPU) video encoding. (Nvidia only yet) 
-- Selectable image format: *PNG*, *jpg*, ...etc. *tif* by default.  
+- Selectable image format: *png*, *jpg*, ...etc. *tif* by default.  
 - **Key commands** to handle all the workflow:  
 1. **Mount** (F8)  
 2. **Record** (F9)  
 3. **Take PNG Snapshot** (F10)  
 4. **Clear** all stills (Ctrl+Alt+BackSpace)
-5. **Auto-call batch FFmpeg** *stills_to_video* compression after capture (F11),  
-auto-opens video with your video player.
+5. **Auto-call batch FFmpeg** *stills_to_video* compression after capture finished (F11),  
+auto-opens video with your videoplayer.
 
 ## Usage
  
@@ -67,9 +67,7 @@ CaptureWindow capturer;
 ### ofApp.cpp
 ```.cpp
 ofApp::setup(){
-	capturer.setPathRoot("F:\\openFrameworks\\addons\\ofxSurfingCapturer\\example-BasicStills\\bin\\data\\");
 	capturer.setup();
-	capturer.setActive(true);// make visible
 }
 
 ofApp::draw(){
@@ -78,8 +76,8 @@ ofApp::draw(){
 	///----- draw your scene here -----///
 
 	capturer.end();
-
 	capturer.draw();
+
 	capturer.drawInfo();
 }
 ```
@@ -94,12 +92,12 @@ https://github.com/gallagher-tech/ofxFFmpegRecorder.git
 https://github.com/NickHardeman/ofxFastFboReader.git  
 
 ## Notes
-- Includes some **FFmpeg** scripts, links and a Windows compiled *ffmpeg.exe*.
-- To batch-join stills (xxxxx.tif) to video (out.mp4) requires (included) **ffmpeg.exe** binary.
-- TODO: Add macOS FFmpeg binary.
-- TODO: Should improve data path to use default ofDataPath...
-- TODO: Check if window resize don't breaks Fbo capturer size... 
-- TODO: Include GPU AMD FFmpeg script...
+- Includes some **FFmpeg** scripts, links and a Windows *ffmpeg.exe* binary.
+- Video encoding, batch-join stills (xxxxx.tif) to video (output.mp4) requires **ffmpeg.exe** binary (included).
+- TODO: Test on **macOS** and add FFmpeg binary. 
+- `ofxSurfing_CaptureWindowStills.h` could work on **macOS** and **Linux** too, bc only relays into *ofxTextureRecorder*.
+- TODO: Check if window resize don't breaks Fbo capturer size...
+- FFmpeg encode using AMD GPU could work because you can customize the script.
 
 ## Tested systems
 - **Windows10** / **VS2017** / **OF 0.11**
