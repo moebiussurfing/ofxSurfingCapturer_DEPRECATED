@@ -24,6 +24,7 @@ Uses ofxSurfing_CaptureWindowStills.h
 1. **F8** : Mounts/prepare the capturer...  
 
 2. **F9** : START Recording!
+
 ![image](/readme_images/Capture2.PNG?raw=true "image")  
 
 3. **F9** : STOP Recording.  
@@ -31,18 +32,19 @@ Uses ofxSurfing_CaptureWindowStills.h
 4. **F11** : RUN the FFmpeg script to join all the still frames (`xxxxx.tif` -> `output.mp4`).  
 
 5. Your videoplayer will auto-start opening the new created video!  
+
 ![image](/readme_images/Capture3.PNG?raw=true "image")
 
 6. *Ctrl+Alt+BackSpace*: Remove all still files.  
 
 ### Data path structure and "ffmpeg.exe" location:
+
 ![image](/readme_images/Capture5.PNG?raw=true "image")
 ![image](/readme_images/Capture6.PNG?raw=true "image")
 
 ### 2. example-BasicVideo: realtime encoding
 Uses ofxSurfing_CaptureWindowFFMPEG.h  
 (with realtime capture and FFmpeg video encoding)  
-![image](/readme_images/Capture4.PNG?raw=true "image")
 
 ## Features
 - **Faster** than other video alternatives (bc "raw" still frames + encode).

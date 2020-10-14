@@ -11,6 +11,8 @@
 // TODO: must finish macOS mode... 
 // it's only tested on Windows.
 // BUG: (maybe) when enabled antialias 16 or RGBF32 recording goes grey... ??
+// another alternative repo:
+// https://github.com/tyhenry/ofxFFmpeg
 
 //-
 
