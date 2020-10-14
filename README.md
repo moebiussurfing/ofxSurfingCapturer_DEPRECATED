@@ -28,7 +28,7 @@ Uses ofxSurfing_CaptureWindowStills.h
 
 3. **F9** : STOP Recording.  
 
-4. **F11** : RUN the FFmpeg script to join all the still frames (xxxxx.tif -> output.mp4).  
+4. **F11** : RUN the FFmpeg script to join all the still frames (`xxxxx.tif` -> `output.mp4`).  
 
 5. Your videoplayer will auto-start opening the new created video!  
 ![image](/readme_images/Capture3.PNG?raw=true "image")
@@ -92,12 +92,12 @@ https://github.com/gallagher-tech/ofxFFmpegRecorder.git
 https://github.com/NickHardeman/ofxFastFboReader.git  
 
 ## Notes
-- Includes some **FFmpeg** scripts, links and a Windows *ffmpeg.exe* binary.
-- Video encoding, batch-join stills (xxxxx.tif) to video (output.mp4) requires **ffmpeg.exe** binary (included).
-- TODO: Test on **macOS** and add FFmpeg binary. 
-- `ofxSurfing_CaptureWindowStills.h` could work on **macOS** and **Linux** too, bc only relays into *ofxTextureRecorder*.
-- TODO: Check if window resize don't breaks Fbo capturer size...
-- FFmpeg encode using AMD GPU could work because you can customize the script.
+- Includes some **FFmpeg** scripts, links and a Windows `ffmpeg.exe` binary.
+- Video encoding, batch-join stills (xxxxx.tif) to video (output.mp4) requires `ffmpeg.exe` binary (included).
+- *TODO*: Test on **macOS** and add FFmpeg binary. 
+- `ofxSurfing_CaptureWindowStills.h` could work on **macOS** and **Linux** too, bc only relays into `ofxTextureRecorder`.
+- *TODO*: Check if window resize don't breaks Fbo capturer size...
+- FFmpeg encode using `AMD GPU` could work because now you can customize the script on setup.
 
 ## Tested systems
 - **Windows10** / **VS2017** / **OF 0.11**
