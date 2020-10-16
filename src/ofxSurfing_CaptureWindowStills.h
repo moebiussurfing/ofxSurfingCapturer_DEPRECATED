@@ -31,6 +31,10 @@ public:
 		ffmpegScript = sscript;
 	}
 
+public:
+	void setDephEnabled(bool b) {
+		bDepth3D = b;
+	}
 private:
 	bool bDepth3D = true;
 	// BUG solved: when using antialias/depth we get "black screen"
@@ -168,15 +172,15 @@ public:
 
 		cap_w = ofGetWidth();
 		cap_h = ofGetHeight();
-		cap_Fbo.allocate(cap_w, cap_h, GL_RGB);
+		//cap_Fbo.allocate(cap_w, cap_h, GL_RGB);
+		//blitFbo.allocate(cap_Fbo.getWidth(), cap_Fbo.getHeight(), GL_RGB);
+		buildAllocateFbo();
 
-		blitFbo.allocate(cap_Fbo.getWidth(), cap_Fbo.getHeight(), GL_RGB);
-
-		stillFormat = format;
+		stillFormat = format;// selectable image format
 
 		buildRecorder();
 
-		buildAllocateFbo();
+		buildAllocateFbo();// refresh after buil recorder ??
 
 		// locate ffmpeg .exe to allow ffmpeg script. but not mandatory if you join the stills using another software...
 		ofFile file;
@@ -207,7 +211,8 @@ public:
 #endif
 		cap_Fbo.allocate(cap_Fbo_Settings);
 
-		blitFbo.allocate(cap_Fbo.getWidth(), cap_Fbo.getHeight());
+		blitFbo.allocate(cap_Fbo_Settings);
+		//blitFbo.allocate(cap_Fbo.getWidth(), cap_Fbo.getHeight());
 	}
 
 	//--------------------------------------------------------------
@@ -243,7 +248,7 @@ public:
 		if (bActive)
 		{
 			cap_Fbo.begin();
-			ofClear(0, 255);
+			ofClear(0);
 		}
 	}
 
@@ -272,7 +277,7 @@ public:
 			//cap_Fbo.draw(0, 0);// drawing is required outside fbo
 			// BUG: depth/antialias
 			blitFbo.begin();
-			ofClear(0, 255);
+			ofClear(0);
 			cap_Fbo.draw(0, 0, cap_w, cap_h);
 			blitFbo.end();
 			blitFbo.draw(0, 0);
