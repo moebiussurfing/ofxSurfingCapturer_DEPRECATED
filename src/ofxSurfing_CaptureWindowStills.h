@@ -240,7 +240,7 @@ public:
 public:
 	//--------------------------------------------------------------
 	void begin() {///call before draw the scene to record
-		//if (bActive) 
+		if (bActive)
 		{
 			cap_Fbo.begin();
 			ofClear(0, 255);
@@ -249,7 +249,7 @@ public:
 
 	//--------------------------------------------------------------
 	void end() {///call after draw the scene to record
-		//if (bActive) 
+		if (bActive)
 		{
 			cap_Fbo.end();
 
@@ -267,14 +267,16 @@ public:
 
 	//--------------------------------------------------------------
 	void draw() {
-		//cap_Fbo.draw(0, 0);// drawing is required outside fbo
-
-		// TEST: BUG: depth/antialias
-		blitFbo.begin();
-		ofClear(0, 255);
-		cap_Fbo.draw(0, 0, cap_w, cap_h);
-		blitFbo.end();
-		blitFbo.draw(0, 0);
+		if (bActive)
+		{
+			//cap_Fbo.draw(0, 0);// drawing is required outside fbo
+			// BUG: depth/antialias
+			blitFbo.begin();
+			ofClear(0, 255);
+			cap_Fbo.draw(0, 0, cap_w, cap_h);
+			blitFbo.end();
+			blitFbo.draw(0, 0);
+		}
 	}
 
 	//--------------------------------------------------------------
