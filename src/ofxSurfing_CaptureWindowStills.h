@@ -5,12 +5,7 @@
 // TODO: 
 // + check/allow change window capture size without breaking the capturer
 
-///----
-///
-#define USE_3D_DEPTH
 #define ANTIALIAS_NUM_SAMPLES 16
-///
-///----
 
 #include "ofxTextureRecorder.h"
 #include "ofxSurfingHelpers2.h"
@@ -18,84 +13,62 @@
 class CaptureWindow : public ofBaseApp, public ofThread
 {
 
+public:
+	ofParameter<bool> bActive{ "Window Capturer", true };// public to integrate into your ofApp gui
+
 private:
-	bool bShowMinimal = true;// hide info when drawing to improve performance a little
-	bool isEncoding = false;
-	bool isPlayingPLayer = false;
+	ofxTextureRecorder recorder;
+
+private:
+	ofFbo cap_Fbo;
+	ofFbo::Settings cap_Fbo_Settings;
+	int cap_w, cap_h;
+
+	ofImageFormat stillFormat;
+
+private:
+	string _pathFolderCaptures;
+	string _pathFolderStills;
+	string _pathFolderSnapshots;
 
 	ofDirectory dataDirectory;
 	int amountStills = 0;
 
-	ofRectangle rectSection;
-	bool bCustomizeSection = false;
-public:
-	//--------------------------------------------------------------
-	void setCustomizeSection(ofRectangle r) {
-		rectSection = r;
-		bCustomizeSection = true;
+private:
+	bool bRecPrepared = false;
+	bool bRecording;
+	bool bShowInfo = true;
 
-		cap_w = rectSection.getWidth();
-		cap_h = rectSection.getHeight();
-		buildAllocateFbo();
-	}
+private:
+	uint32_t timeStart;
+	std::string infoHelpKeys;
+
+private:
+	bool bShowMinimal = true;// hide more info when recording to improve performance a little
+	bool isEncoding = false;
+	bool isPlayingPLayer = false;
+
+	ofRectangle rectSection;// customize capture section. TODO: hardcoded to 0,0 position yet!
+	bool bCustomizeSection = false;
 
 private:
 	std::string pathRoot;
 	ofTrueTypeFont font;
+
+private:
 	bool bFfmpegLocated = false;
 	bool bFfmpegCustomScript = false;
 	std::string ffmpegScript;
-public:
-	//--------------------------------------------------------------
-	void setFFmpegScript(std::string sscript) {// if this is setted, the other hardcoded CPU/GPU aren't used at all
-		bFfmpegCustomScript = true;
-		ffmpegScript = sscript;
-	}
 
-public:
-	//--------------------------------------------------------------
-	void setDephEnabled(bool b) {
-		bDepth3D = b;
-	}
 private:
-	bool bDepth3D = false;
-	//bool bDepth3D = true;
+	//bool bDepth3D = false;// disabled by default. must enable before call setup()
+	bool bDepth3D = true;// enabled by default. must disable before call setup()
+
 	// BUG solved: when using antialias/depth we get "black screen"
-	ofFbo blitFbo;// we need this aux fbo to solve the bug
+	ofFbo blitFbo;// so we need this aux fbo to solve the bug
 
 private:
-	bool bOverwriteOutVideo = true;// we only want the last video. we use same name for all re takes
-public:
-	//--------------------------------------------------------------
-	void setOverwriteVideoOut(bool b) {// default is true. set to false to allow add timestamp to filenames
-		bOverwriteOutVideo = b;
-	}
-
-private:
-	bool bUseFfmpegNvidiaGPU = true;
-public:
-	//--------------------------------------------------------------
-	void setFfpmegGpu(bool b) {
-		bUseFfmpegNvidiaGPU = b;
-	}
-public:
-	//--------------------------------------------------------------
-	void setPathRoot(std::string path) {
-		pathRoot = path;
-	}
-
-	//--------------------------------------------------------------
-	void doRunFFmpegCommand() {
-		ofLogWarning(__FUNCTION__) << " to: " << _pathFolderStills;
-
-		isEncoding = true;
-		isPlayingPLayer = false;
-
-		// we are running the systems commands
-		// in a sperate thread so that it does
-		// not block the drawing
-		startThread();
-	}
+	bool bOverwriteOutVideo = true;// we only want the last video. we use same name for all re takes and overwrite.
 
 public:
 	//--------------------------------------------------------------
@@ -108,7 +81,6 @@ public:
 		_pathFolderStills = _pathFolderCaptures + "Stills\\";
 		_pathFolderSnapshots = _pathFolderCaptures + "Snapshots\\";
 
-		//string _font = "assets/fonts/telegrama_render.otf";
 		string _font = "assets/fonts/overpass-mono-bold.otf";
 		bool b = font.load(_font, 8);
 		if (!b) font.load(OF_TTF_SERIF, 8);// solve font file not found OF bundled alternative font
@@ -122,61 +94,6 @@ public:
 		// stop the thread on exit
 		waitForThread(true);
 	};
-
-private:
-	ofxTextureRecorder recorder;
-
-	ofFbo cap_Fbo;
-	ofFbo::Settings cap_Fbo_Settings;
-	int cap_w, cap_h;
-
-	string _pathFolderCaptures;
-	string _pathFolderStills;
-	string _pathFolderSnapshots;
-
-private:
-	bool bRecPrepared = false;
-	bool bRecording;
-	bool bShowInfo = true;
-
-	//-
-
-	// API
-
-public:
-	ofParameter<bool> bActive{ "Window Capturer", true };// public to integrate into your ofApp gui
-	//--------------------------------------------------------------
-	void setActive(bool b) {
-		bActive = b;
-		bShowInfo = bActive;
-	}
-
-	//--------------------------------------------------------------
-	void setToggleActive() {
-		bActive = !bActive;
-	}
-
-public:
-	//--------------------------------------------------------------
-	void setVisibleInfo(bool b) {
-		bShowInfo = b;
-	}
-	//--------------------------------------------------------------
-	void setToggleVisibleInfo() {
-		bShowInfo = !bShowInfo;
-	}
-
-private:
-	//--------------------------------------------------------------
-	float getRecordedDuration() {
-		return (ofGetElapsedTimeMillis() - timeStart) / 1000.f;
-	}
-
-private:
-	uint32_t timeStart;
-	std::string infoHelpKeys;
-
-	ofImageFormat stillFormat;
 
 public:
 	//--------------------------------------------------------------
@@ -234,7 +151,6 @@ public:
 		cap_Fbo_Settings.width = cap_w;
 		cap_Fbo_Settings.height = cap_h;
 
-#ifdef USE_3D_DEPTH
 		if (bDepth3D)
 		{
 			cap_Fbo_Settings.useDepth = true;// required to enable depth test
@@ -243,7 +159,6 @@ public:
 			//cap_Fbo_Settings.depthStencilAsTexture = true;
 			//cap_Fbo_Settings.maxFilter
 		}
-#endif
 
 		cap_Fbo.allocate(cap_Fbo_Settings);
 		cap_Fbo.begin();
@@ -285,6 +200,17 @@ public:
 	//	//ofxTextureRecorder::Settings
 	//	//recorder.
 	//}
+
+public:
+	//--------------------------------------------------------------
+	void setCustomizeSection(ofRectangle r) {
+		rectSection = r;
+		bCustomizeSection = true;
+
+		cap_w = rectSection.getWidth();
+		cap_h = rectSection.getHeight();
+		buildAllocateFbo();
+	}
 
 public:
 	//--------------------------------------------------------------
@@ -342,22 +268,23 @@ public:
 
 			//--
 
-			if (bShowMinimal && bRecording)
+			if (bShowMinimal && bRecording)// reduced info when recording to imrpove performance a little
 			{
-				//// animated points..
-				//const int p = 30;//period in frames
-				//int fn = ofGetFrameNum() % (p * 4);
-				//bool b0, b1, b2;
-				//b0 = (fn > p * 3);
-				//b1 = (fn > p * 2);
-				//b2 = (fn > p * 1);
-				//string sp = "";
-				//if (b0) sp += ".";
-				//if (b1) sp += ".";
-				//if (b2) sp += ".";
-				//str += "RECORDING" + sp + "\n";
+				// animated points..
+				const int p = 30;//period in frames
+				int fn = ofGetFrameNum() % (p * 4);
+				bool b0, b1, b2;
+				b0 = (fn > p * 3);
+				b1 = (fn > p * 2);
+				b2 = (fn > p * 1);
+				string sp = "";
+				if (b0) sp += ".";
+				if (b1) sp += ".";
+				if (b2) sp += ".";
+				str += "RECORDING" + sp + "\n";
 
-				str += "RECORDING...\n";
+				//str += "RECORDING...\n";
+
 				str += "FPS " + ofToString(ofGetFrameRate(), 0) + "\n";
 				str += "DURATION: " + calculateTime(getRecordedDuration()) + "\n";
 				str += "F9 : STOP";
@@ -392,21 +319,21 @@ public:
 				else if (bRecPrepared || bRecording || isThreadRunning())
 				{
 					// cap info
-					str += "FPS " + ofToString(ofGetFrameRate(), 0) + "      " + ofToString(recorder.getFrame()) + " frames\n";
-					str += "WINDOW      " + ofToString(ofGetWidth()) + "x" + ofToString(ofGetHeight()) + "\n";
-					str += "RECORDER    " + ofToString(recorder.getWidth()) + "x" + ofToString(recorder.getHeight()) + "\n";
-					str += "FBO SIZE    " + ofToString(cap_w) + "x" + ofToString(cap_h) + "\n";
+					str += "FPS " + ofToString(ofGetFrameRate(), 0) + "          " + ofToString(recorder.getFrame()) + " frames\n";
+					str += "WINDOW          " + ofToString(ofGetWidth()) + "x" + ofToString(ofGetHeight()) + "\n";
+					str += "RECORDER        " + ofToString(recorder.getWidth()) + "x" + ofToString(recorder.getHeight()) + "\n";
+					str += "FBO SIZE        " + ofToString(cap_w) + "x" + ofToString(cap_h) + "\n";
 					if (bCustomizeSection)
 					{
-						str += "SECTION     " + ofToString(rectSection.getX()) + "," + ofToString(rectSection.getY());
+						str += "SECTION         " + ofToString(rectSection.getX()) + "," + ofToString(rectSection.getY());
 						str += " " + ofToString(rectSection.getWidth()) + "x" + ofToString(rectSection.getHeight()) + "\n";
 					}
-					str += "Disk Stills " + ofToString(amountStills) + "\n";
+					str += "Disk Stills     " + ofToString(amountStills) + "\n";
 					str += "\n";
 
 					if (bRecording)
 					{
-						str += "F9  : STOP Recording\n";
+						str += "F9  : STOP\n";
 						str += "RECORD DURATION: " + ofToString(getRecordedDuration(), 1) + "\n";
 
 						// error
@@ -423,8 +350,8 @@ public:
 					}
 					else if (bRecPrepared || isThreadRunning())// mounted or running ffmpeg script
 					{
-						str += "F9  : START Recording\n";
-						str += "F8  : UnMount Recorder\n";
+						str += "F9  : START\n";
+						str += "F8  : UNMOUNT\n";
 						if ((!bFfmpegLocated) && ofGetFrameNum() % 60 < 20) str += "> ALERT! Missing ffmpeg.exe...";
 						str += "\n";
 
@@ -448,7 +375,7 @@ public:
 						else {
 							str += "> MOUNTED! READY" + sp + "\n";
 							if (b1 || b2) {
-								str += "> PRESS F9  TO START CAPTURE\n";
+								str += "> PRESS F9  TO START CAPTURER\n";
 								str += "> PRESS F11 TO ENCODE VIDEO\n";
 							}
 							else {
@@ -469,43 +396,42 @@ public:
 
 			float h = ofxSurfingHelpers2::getHeightBBtextBoxed(font, str);
 			y = ofGetHeight() - h - x + 8;// bad offset
-			//y = ofGetHeight() - h - 25;
 
 			ofxSurfingHelpers2::drawTextBoxed(font, str, x, y);
-			//ofDrawBitmapStringHighlight(str, x, y);
 
 			//-
 
-			// red circle
-			if (!bShowMinimal && !bRecording)
+			// red blink circle
+			if ((bShowMinimal && bRecPrepared) && (!bRecording))
 			{
-				float radius = 10;
-				int yy = y + 50;
-				x += 200 + radius;
+				float radius = 15;
+				int yy = y + radius;
+				int xx = x + 2 * radius + 200;
 
-				if (!isThreadRunning()) {
+				if (!isThreadRunning()) {// only while not encoding video
 					ofPushStyle();
+					ofColor c1{ ofColor(0,128) };
+					ofColor c2{ ofColor(ofColor::red,200) };
+					ofSetLineWidth(1.f);
 					if (bRecording)
 					{
 						ofFill();
-						ofSetColor(ofColor::red);
-						ofDrawCircle(ofPoint(x + radius, yy), radius);
+						ofSetColor(c2);
+						ofDrawCircle(ofPoint(xx, yy), radius);
 						ofNoFill();
-						ofSetLineWidth(2.f);
-						ofSetColor(ofColor::black);
-						ofDrawCircle(ofPoint(x + radius, yy), radius);
+						ofSetColor(c1);
+						ofDrawCircle(ofPoint(xx, yy), radius);
 					}
 					else if (bRecPrepared)
 					{
 						if (ofGetFrameNum() % 60 < 20) {
 							ofFill();
-							ofSetColor(ofColor::red);
-							ofDrawCircle(ofPoint(x + radius, yy), radius);
+							ofSetColor(c2);
+							ofDrawCircle(ofPoint(xx, yy), radius);
 						}
 						ofNoFill();
-						ofSetLineWidth(2.f);
-						ofSetColor(ofColor::black);
-						ofDrawCircle(ofPoint(x + radius, yy), radius);
+						ofSetColor(c1);
+						ofDrawCircle(ofPoint(xx, yy), radius);
 					}
 					ofPopStyle();
 				}
@@ -527,6 +453,80 @@ public:
 		}
 	}
 
+public:
+	//--------------------------------------------------------------
+	void setFFmpegScript(std::string sscript) {// if this is setted, the other hardcoded CPU/GPU aren't used at all
+		bFfmpegCustomScript = true;
+		ffmpegScript = sscript;
+	}
+
+public:
+	//--------------------------------------------------------------
+	void setDephEnabled(bool b) {
+		bDepth3D = b;
+	}
+
+public:
+	//--------------------------------------------------------------
+	void setOverwriteVideoOut(bool b) {// default is true. set to false to allow add timestamp to filenames
+		bOverwriteOutVideo = b;
+	}
+
+private:
+	bool bUseFfmpegNvidiaGPU = true;
+
+public:
+	//--------------------------------------------------------------
+	void setFfpmegGpu(bool b) {
+		bUseFfmpegNvidiaGPU = b;
+	}
+public:
+	//--------------------------------------------------------------
+	void setPathRoot(std::string path) {
+		pathRoot = path;
+	}
+
+public:
+	//--------------------------------------------------------------
+	void doRunFFmpegCommand() {
+		ofLogWarning(__FUNCTION__) << " to: " << _pathFolderStills;
+
+		isEncoding = true;
+		isPlayingPLayer = false;
+
+		// we are running the systems commands
+		// in a sperate thread so that it does
+		// not block the drawing
+		startThread();
+	}
+	//--------------------------------------------------------------
+	void setActive(bool b) {
+		bActive = b;
+		bShowInfo = bActive;
+	}
+
+	//--------------------------------------------------------------
+	void setToggleActive() {
+		bActive = !bActive;
+	}
+
+public:
+	//--------------------------------------------------------------
+	void setVisibleInfo(bool b) {
+		bShowInfo = b;
+	}
+	//--------------------------------------------------------------
+	void setToggleVisibleInfo() {
+		bShowInfo = !bShowInfo;
+	}
+
+private:
+	//--------------------------------------------------------------
+	float getRecordedDuration() {
+		return (ofGetElapsedTimeMillis() - timeStart) / 1000.f;
+	}
+
+public:
 	//--------------------------------------------------------------
 	void keyPressed(ofKeyEventArgs &eventArgs) {///to received short keys control commands
 		if (bActive)
@@ -967,7 +967,6 @@ private:
 		else {
 			secs = ofToString(secs_left);
 		}
-
 
 		//cout << ofGetElapsedTimeMillis() / 1000 << endl;
 		//cout << "remaining time : " << mins_left << " : " <<  secs_left << endl;
