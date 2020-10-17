@@ -42,7 +42,6 @@ public:
 private:
 	std::string pathRoot;
 	ofTrueTypeFont font;
-
 	bool bFfmpegLocated = false;
 	bool bFfmpegCustomScript = false;
 	std::string ffmpegScript;
@@ -88,7 +87,7 @@ public:
 	//--------------------------------------------------------------
 	void doRunFFmpegCommand() {
 		ofLogWarning(__FUNCTION__) << " to: " << _pathFolderStills;
-		
+
 		isEncoding = true;
 		isPlayingPLayer = false;
 
@@ -139,6 +138,10 @@ private:
 	bool bRecPrepared = false;
 	bool bRecording;
 	bool bShowInfo = true;
+
+	//-
+
+	// API
 
 public:
 	ofParameter<bool> bActive{ "Window Capturer", true };// public to integrate into your ofApp gui
@@ -274,7 +277,6 @@ public:
 		recorder.setPath(_pathFolderStills);
 		recorder.setup(settings);
 	}
-
 	// TODO: window resize ??
 	////--------------------------------------------------------------
 	//void refreshRecorder() {
@@ -475,7 +477,7 @@ public:
 			//-
 
 			// red circle
-			if (!bShowMinimal && !bRecording) 
+			if (!bShowMinimal && !bRecording)
 			{
 				float radius = 10;
 				int yy = y + 50;
@@ -665,7 +667,7 @@ public:
 
 	//--------------------------------------------------------------
 	void windowResized(int w, int h) {// must be called to resize the fbo and video resolution
-		if (!bCustomizeSection) // we don't want to resize the canvas when  custom section is enabled
+		if (!bCustomizeSection && bActive) // we don't want to resize the canvas when  custom section is enabled
 		{
 			cap_w = w;
 			cap_h = h;
@@ -701,236 +703,239 @@ private:
 	// join all stills to a video file
 	//--------------------------------------------------------------
 	void threadedFunction() {
-		cout << "--------------------------------------------------------------" << endl;
-		ofLogWarning(__FUNCTION__) << endl;
-		cout << (__FUNCTION__) << endl;
+		if (bActive) {
+			cout << "--------------------------------------------------------------" << endl;
+			ofLogWarning(__FUNCTION__) << endl;
+			cout << (__FUNCTION__) << endl;
 
-		string warninglog = "";
-		warninglog += "> WARNING! ofApp.exe must run as Administrator !\n";
-		warninglog += "> WARNING! ffmpeg.exe must be located on: " + pathRoot + "/ffmpeg.exe !\n";
+			string warninglog = "";
+			warninglog += "> WARNING! ofApp.exe must run as Administrator !\n";
+			warninglog += "> WARNING! ffmpeg.exe must be located on: " + pathRoot + "/ffmpeg.exe !\n";
 
-		cout << endl << warninglog << endl;
+			cout << endl << warninglog << endl;
 
-		if (isThreadRunning())
-		{
-			// build ffmpeg command
-
-			cout << "> Starting join all stills (xxxxx.tif) to a video file (.mp4)...";
-
-			stringstream cmd;
-			stringstream cmdEncodingArgs;
-			stringstream ffmpeg;
-			stringstream filesSrc;
-			stringstream pathDest;
-			stringstream nameDest;
-			stringstream fileOut;
-			stringstream pathAppData;
-
-			pathAppData << pathRoot;
-
-			ffmpeg << pathAppData.str().c_str() << "ffmpeg.exe";
-
-			// input files
-			pathDest << pathAppData.str().c_str() << _pathFolderCaptures;
-			filesSrc << pathAppData.str().c_str() << _pathFolderStills << "%05d.tif"; // data/stills/%05d.tif
-
-			// output video file
-			if (bOverwriteOutVideo) nameDest << "output.mp4"; // "output.mp4";
-			else nameDest << "output_" << ofGetTimestampString() << ".mp4"; // "output_2020-10-11-19-08-01-417.mp4";// timestamped
-			fileOut << pathDest.str().c_str() << nameDest;
-
-			//-
-
-			// used template to join stills:
-
-			// https://trac.ffmpeg.org/wiki/Encode/H.264
-			// Constant Rate Factor: CRF scale is 0–51, where 0 is lossless, 23 is the default, and 51 is worst quality possible. 
-			// A lower value generally leads to higher quality, and a subjectively sane range is 17–28. 
-			// Consider 17 or 18 to be visually lossless or nearly so; it should look the same or nearly the same as the input but it isn't technically lossless. 
-			// https://bytescout.com/blog/2016/12/ffmpeg-command-lines-convert-various-video-formats.html
-
-			// Template is selectable by API
-
-			//-
-
-			// customized script by user:
-			if (bFfmpegCustomScript)
+			if (isThreadRunning())
 			{
-				// 1. append exe + source files
-				cmd << ffmpeg << " -y -f image2 -i " << filesSrc.str().c_str() << " ";
+				// build ffmpeg command
 
-				// 2. apend script
-				cmd << ffmpegScript.c_str() << " ";
+				cout << "> Starting join all stills (xxxxx.tif) to a video file (.mp4)...";
 
-				// 3. append file output
-				cmd << fileOut.str().c_str();
+				stringstream cmd;
+				stringstream cmdEncodingArgs;
+				stringstream ffmpeg;
+				stringstream filesSrc;
+				stringstream pathDest;
+				stringstream nameDest;
+				stringstream fileOut;
+				stringstream pathAppData;
 
-				//-
+				pathAppData << pathRoot;
 
-				cout << endl << endl;
-				cout << "> CUSTOM FFmpeg SCRIPT" << endl << endl;
-				cout << "> ffmpeg.exe : " << endl << ffmpeg.str().c_str();
-				cout << endl << endl;
-				cout << "> Source: " << endl << filesSrc.str().c_str();
-				cout << endl << endl;
-				cout << "> FFmpeg CustomScript : " << endl << ffmpegScript.c_str();
-				cout << endl << endl;
-				cout << "> Out : " << endl << fileOut.str().c_str();
-				cout << endl << endl;
-				cout << "> Raw Command: " << endl << cmd.str().c_str();
-				cout << endl << endl;
-			}
-			else // hardcoded scripts
-			{
-				// template A: CPU
-				// this  intended to be a lossless preset
-				// ffmpeg -r 60 -f image2 -s 1920x1080 -i %05d.tif -c:v libx264 -preset veryslow -qp 0 output.mp4 // lossless
+				ffmpeg << pathAppData.str().c_str() << "ffmpeg.exe";
+
+				// input files
+				pathDest << pathAppData.str().c_str() << _pathFolderCaptures;
+				filesSrc << pathAppData.str().c_str() << _pathFolderStills << "%05d.tif"; // data/stills/%05d.tif
+
+				// output video file
+				if (bOverwriteOutVideo) nameDest << "output.mp4"; // "output.mp4";
+				else nameDest << "output_" << ofGetTimestampString() << ".mp4"; // "output_2020-10-11-19-08-01-417.mp4";// timestamped
+				fileOut << pathDest.str().c_str() << nameDest;
 
 				//-
 
-				// template B: GPU
-				// https://developer.nvidia.com/blog/nvidia-ffmpeg-transcoding-guide/
-				// Command Line for Latency-Tolerant High-Quality Transcoding:
-				// "ffmpeg -y -vsync 0 -hwaccel cuda -hwaccel_output_format cuda 
-				// -i input.mp4 -c:a copy  
-				// -c:v h264_nvenc -preset slow -profile high -b:v 5M 
-				// -bufsize 5M -maxrate 10M -qmin 0 -g 250 -bf 3 -b_ref_mode middle -temporal-aq 1 -rc-lookahead 20 -i_qfactor 0.75 -b_qfactor 1.1 
-				// output.mp4"
-				// -hwaccel cuda > Unrecognized hwaccel : cuda. Supported hwaccels : dxva2 qsv cuvid
+				// used template to join stills:
 
-				// https://forums.guru3d.com/threads/how-to-encode-video-with-ffmpeg-using-nvenc.411509/
-				// If you want lossless encoding use preset = lossless.
-				// cq = number controls quality, lower number means better quality. 
-				// - rc constqp enables constant quality rate mode which in my opinion is really, really handy and I always use it over fixed bitrate modes.
-				// It's really great to see than NVENC supports this mode and on top of that it even supports lossless encoding and yuv444p format. 
-				// On top of that NVENC's constant quality rate mode works surprisingly well, quality wise.
-				// You can also play with - temporal - aq 1 switch (works for AVC) and -spatial_aq 1 switch (works for HEVC).
-				// Add them after - preset % preset%.For AVC you can enable b frames with - b switch.NVIDIA recommended using three b - frames(-b) in one of their pdfs for optimal quality(switch: -b 3).
-				// if your source material is lossless RGB and you want the absolutely best quality, use preset=lossless and uncomment SET videofilter=-pix_fmt yuv444p
+				// https://trac.ffmpeg.org/wiki/Encode/H.264
+				// Constant Rate Factor: CRF scale is 0–51, where 0 is lossless, 23 is the default, and 51 is worst quality possible. 
+				// A lower value generally leads to higher quality, and a subjectively sane range is 17–28. 
+				// Consider 17 or 18 to be visually lossless or nearly so; it should look the same or nearly the same as the input but it isn't technically lossless. 
+				// https://bytescout.com/blog/2016/12/ffmpeg-command-lines-convert-various-video-formats.html
+
+				// Template is selectable by API
 
 				//-
 
-				// build the ffmpeg command:
-
-				// 1. prepare source and basic settings: auto overwrite file, fps, size, stills source
-				cmd << ffmpeg << " -y -f image2 -i " << filesSrc.str().c_str() << " ";
-				cmd << "-r 60 ";// framerate
-
-				// we can resize too or mantain the original window size
-				//cmd << "-s hd1080 ";
-				//cmd << "-s 1920x1080 ";
-
-				// 2. append encoding settings
-				// template 1: (CPU)
-				if (!bUseFfmpegNvidiaGPU) cmdEncodingArgs << "-c:v libx264 -preset veryslow -qp 0 ";
-
-				// template 2: (Nvidia GPU)
-				else if (bUseFfmpegNvidiaGPU)
+				// customized script by user:
+				if (bFfmpegCustomScript)
 				{
-					cmdEncodingArgs << "-c:v h264_nvenc ";// enables GPU hardware accellerated Nvidia encoding. Could check similar arg to AMD..
-					cmdEncodingArgs << "-b:v 25M "; // constant bitrate 25000
-					cmdEncodingArgs << "-crf 20 ";
-					//cmdEncodingArgs << "-vsync 0 ";
-					//cmdEncodingArgs << "-hwaccel cuvid ";
-					//cmdEncodingArgs << "-qp 0 ";
-					cmdEncodingArgs << "-preset slow ";	// 10secs = 30MB
-					//cmdEncodingArgs << "-preset lossless ";	// 10secs = 150MB
-					//cmdEncodingArgs << "-profile high ";
-					//cmdEncodingArgs << "-pix_fmt yuv444p ";// 10secs = 300MB. doubles size! raw format but too heavy weight!
-				}
-				// append
-				cmd << cmdEncodingArgs;
+					// 1. append exe + source files
+					cmd << ffmpeg << " -y -f image2 -i " << filesSrc.str().c_str() << " ";
 
-				// 3. append file output
-				cmd << fileOut.str().c_str();
+					// 2. apend script
+					cmd << ffmpegScript.c_str() << " ";
+
+					// 3. append file output
+					cmd << fileOut.str().c_str();
+
+					//-
+
+					cout << endl << endl;
+					cout << "> CUSTOM FFmpeg SCRIPT" << endl << endl;
+					cout << "> ffmpeg.exe : " << endl << ffmpeg.str().c_str();
+					cout << endl << endl;
+					cout << "> Source: " << endl << filesSrc.str().c_str();
+					cout << endl << endl;
+					cout << "> FFmpeg CustomScript : " << endl << ffmpegScript.c_str();
+					cout << endl << endl;
+					cout << "> Out : " << endl << fileOut.str().c_str();
+					cout << endl << endl;
+					cout << "> Raw Command: " << endl << cmd.str().c_str();
+					cout << endl << endl;
+				}
+				else // hardcoded scripts
+				{
+					// template A: CPU
+					// this  intended to be a lossless preset
+					// ffmpeg -r 60 -f image2 -s 1920x1080 -i %05d.tif -c:v libx264 -preset veryslow -qp 0 output.mp4 // lossless
+
+					//-
+
+					// template B: GPU
+					// https://developer.nvidia.com/blog/nvidia-ffmpeg-transcoding-guide/
+					// Command Line for Latency-Tolerant High-Quality Transcoding:
+					// "ffmpeg -y -vsync 0 -hwaccel cuda -hwaccel_output_format cuda 
+					// -i input.mp4 -c:a copy  
+					// -c:v h264_nvenc -preset slow -profile high -b:v 5M 
+					// -bufsize 5M -maxrate 10M -qmin 0 -g 250 -bf 3 -b_ref_mode middle -temporal-aq 1 -rc-lookahead 20 -i_qfactor 0.75 -b_qfactor 1.1 
+					// output.mp4"
+					// -hwaccel cuda > Unrecognized hwaccel : cuda. Supported hwaccels : dxva2 qsv cuvid
+
+					// https://forums.guru3d.com/threads/how-to-encode-video-with-ffmpeg-using-nvenc.411509/
+					// If you want lossless encoding use preset = lossless.
+					// cq = number controls quality, lower number means better quality. 
+					// - rc constqp enables constant quality rate mode which in my opinion is really, really handy and I always use it over fixed bitrate modes.
+					// It's really great to see than NVENC supports this mode and on top of that it even supports lossless encoding and yuv444p format. 
+					// On top of that NVENC's constant quality rate mode works surprisingly well, quality wise.
+					// You can also play with - temporal - aq 1 switch (works for AVC) and -spatial_aq 1 switch (works for HEVC).
+					// Add them after - preset % preset%.For AVC you can enable b frames with - b switch.NVIDIA recommended using three b - frames(-b) in one of their pdfs for optimal quality(switch: -b 3).
+					// if your source material is lossless RGB and you want the absolutely best quality, use preset=lossless and uncomment SET videofilter=-pix_fmt yuv444p
+
+					//-
+
+					// build the ffmpeg command:
+
+					// 1. prepare source and basic settings: auto overwrite file, fps, size, stills source
+					cmd << ffmpeg << " -y -f image2 -i " << filesSrc.str().c_str() << " ";
+					cmd << "-r 60 ";// framerate
+
+					// we can resize too or mantain the original window size
+					//cmd << "-s hd1080 ";
+					//cmd << "-s 1920x1080 ";
+
+					// 2. append encoding settings
+					// template 1: (CPU)
+					if (!bUseFfmpegNvidiaGPU) cmdEncodingArgs << "-c:v libx264 -preset veryslow -qp 0 ";
+
+					// template 2: (Nvidia GPU)
+					else if (bUseFfmpegNvidiaGPU)
+					{
+						cmdEncodingArgs << "-c:v h264_nvenc ";// enables GPU hardware accellerated Nvidia encoding. Could check similar arg to AMD..
+						cmdEncodingArgs << "-b:v 25M "; // constant bitrate 25000
+						cmdEncodingArgs << "-crf 20 ";
+						//cmdEncodingArgs << "-vsync 0 ";
+						//cmdEncodingArgs << "-hwaccel cuvid ";
+						//cmdEncodingArgs << "-qp 0 ";
+						cmdEncodingArgs << "-preset slow ";	// 10secs = 30MB
+						//cmdEncodingArgs << "-preset lossless ";	// 10secs = 150MB
+						//cmdEncodingArgs << "-profile high ";
+						//cmdEncodingArgs << "-pix_fmt yuv444p ";// 10secs = 300MB. doubles size! raw format but too heavy weight!
+					}
+					// append
+					cmd << cmdEncodingArgs;
+
+					// 3. append file output
+					cmd << fileOut.str().c_str();
+
+					//-
+
+					cout << endl << endl;
+					cout << "> HARDCODED FFmpeg SCRIPT" << endl << endl;
+					cout << "> ffmpeg.exe : " << endl << ffmpeg.str().c_str();
+					cout << endl << endl;
+					cout << "> Source : " << endl << filesSrc.str().c_str();
+					cout << endl << endl;
+					cout << "> Out : " << endl << fileOut.str().c_str();
+					cout << endl << endl;
+					cout << "> Raw Command: " << endl << cmd.str().c_str();
+					cout << endl << endl;
+					cout << "> Quality Encoding arguments: " << endl << cmdEncodingArgs.str().c_str();
+					cout << endl << endl;
+				}
 
 				//-
 
+				// 4. run video encoding
+
+				std::string slog;
+				slog = ofSystem(cmd.str().c_str());
+				cout << endl << "> Log: " << endl << slog << endl;
+
+				//-
+
+				cout << endl;
+				cout << "> DONE/TRYING VIDEO ENCODING INTO: " << endl << fileOut.str().c_str();
 				cout << endl << endl;
-				cout << "> HARDCODED FFmpeg SCRIPT" << endl << endl;
-				cout << "> ffmpeg.exe : " << endl << ffmpeg.str().c_str();
+				cout << "> WARNING: CLOSE YOUR VIDEOPLAYER TO UNBLOCK ALLOW CLOSE THE APP !";
 				cout << endl << endl;
-				cout << "> Source : " << endl << filesSrc.str().c_str();
-				cout << endl << endl;
-				cout << "> Out : " << endl << fileOut.str().c_str();
-				cout << endl << endl;
-				cout << "> Raw Command: " << endl << cmd.str().c_str();
-				cout << endl << endl;
-				cout << "> Quality Encoding arguments: " << endl << cmdEncodingArgs.str().c_str();
-				cout << endl << endl;
+				cout << "--------------------------------------------------------------" << endl << endl;
+
+				// TODO: not sure if can collide bc threading and if it's correct (mutex?)
+				isEncoding = false;
+				isPlayingPLayer = true;
+
+				cout << "> WARNING: If output video is not opened NOW, and getting above an error like:" << endl;
+				cout << "\t'is not recognized as an internal or external command, operable program or batch file.'" << endl;
+				cout << "> Then probably you need to set your ofApp.exe settings to run as Administrator:" << endl;
+				cout << "> Use Windows File Explorer file properties / Change settings for all users / compatibility." << endl;
+				cout << "> This is to allow run ffmpeg.exe and access to files from here!" << endl;
+
+				//-
+
+				// 5. open video file with your system player
+				slog = ofSystem(fileOut.str().c_str());
+				cout << slog << endl;
+
+				//-
+
+				// 6. log 
+				// TODO: should check log errors...
+				// error seems to print this:
+				//" is not recognized as an internal or external command,
+				//operable program or batch file."
+
+				//--
+
+				// some system examples
+
+				//cout << ofSystem("cd data\\") << endl;
+				//cout << ofSystem("dir") << endl;
+				//cout << ofSystem("cd captures") << endl;
+				//cout << ofSystem("dir") << endl;
+
+				//stringstream someCmd;
+				//someCmd.clear();
+				//someCmd << "dir";
+				//cout << someCmd << endl;
+				//cout << ofSystem(someCmd.str().c_str()) << endl;
+
+				//-
+
+				// TODO:
+				// stop the thread on exit
+				waitForThread(true);
+				isEncoding = false;
+				isPlayingPLayer = false;
+				cout << "> VIDEOPLAYER CLOSED !" << endl;
+				cout << "> ENCODING PROCESS / THREAD FINISHED !" << endl;
 			}
-
-			//-
-
-			// 4. run video encoding
-
-			std::string slog;
-			slog = ofSystem(cmd.str().c_str());
-			cout << endl << "> Log: " << endl << slog << endl;
-
-			//-
-
-			cout << endl;
-			cout << "> DONE/TRYING VIDEO ENCODING INTO: " << endl << fileOut.str().c_str();
-			cout << endl << endl;
-			cout << "> WARNING: CLOSE YOUR VIDEOPLAYER TO UNBLOCK ALLOW CLOSE THE APP !";
-			cout << endl << endl;
-			cout << "--------------------------------------------------------------" << endl << endl;
-			
-			// TODO: not sure if can collide bc threading and if it's correct (mutex?)
-			isEncoding = false;
-			isPlayingPLayer = true;
-
-			cout << "> WARNING: If output video is not opened NOW, and getting above an error like:" << endl;
-			cout << "\t'is not recognized as an internal or external command, operable program or batch file.'" << endl;
-			cout << "> Then probably you need to set your ofApp.exe settings to run as Administrator:" << endl;
-			cout << "> Use Windows File Explorer file properties / Change settings for all users / compatibility." << endl;
-			cout << "> This is to allow run ffmpeg.exe and access to files from here!" << endl;
-
-			//-
-
-			// 5. open video file with your system player
-			slog = ofSystem(fileOut.str().c_str());
-			cout << slog << endl;
-
-			//-
-
-			// 6. log 
-			// TODO: should check log errors...
-			// error seems to print this:
-			//" is not recognized as an internal or external command,
-			//operable program or batch file."
-
-			//--
-
-			// some system examples
-
-			//cout << ofSystem("cd data\\") << endl;
-			//cout << ofSystem("dir") << endl;
-			//cout << ofSystem("cd captures") << endl;
-			//cout << ofSystem("dir") << endl;
-
-			//stringstream someCmd;
-			//someCmd.clear();
-			//someCmd << "dir";
-			//cout << someCmd << endl;
-			//cout << ofSystem(someCmd.str().c_str()) << endl;
-
-			//-
-
-			// TODO:
-			// stop the thread on exit
-			waitForThread(true);
-			isEncoding = false;
-			isPlayingPLayer = false;
-			cout << "> VIDEOPLAYER CLOSED !"<< endl;
-			cout << "> ENCODING PROCESS / THREAD FINISEHD !"<< endl;
 		}
 	}
 
 	//-
 
-// original code from: ofxFilikaUtils.h
+private:
+	// original code from: ofxFilikaUtils.h
 #define SECS_PER_MIN 60
 #define SECS_PER_HOUR 3600
 	//--------------------------------------------------------------
