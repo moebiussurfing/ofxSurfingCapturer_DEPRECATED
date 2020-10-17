@@ -101,7 +101,7 @@ namespace ofxSurfingHelpers2 {
 	{
 		ofLogVerbose(__FUNCTION__) << g.getName() << " to " << path;
 		ofLogVerbose(__FUNCTION__) << "parameters: \n" << g.toString();
-		
+
 		//CheckFolder(path);
 
 		ofXml settings;
@@ -155,7 +155,7 @@ namespace ofxSurfingHelpers2 {
 			ofLogVerbose(__FUNCTION__) << g.getName() << " to " << path;
 			ofLogVerbose(__FUNCTION__) << "parameters: \n" << g.toString();
 		}
-		
+
 		//ofxSurfingHelpers::CheckFolder(path);
 
 		ofJson settings;
@@ -269,7 +269,7 @@ namespace ofxSurfingHelpers2 {
 	//--------------------------------------------------------------
 	// draws a box with text
 	//--------------------------------------------------------------
-	inline void drawTextBoxed(ofTrueTypeFont &font, string text, int x, int y, ofColor font0_Color = 255, ofColor colorBackground = 0, bool useShadow = false, ofColor colorShadow = 128)
+	inline void drawTextBoxed(ofTrueTypeFont &font, string text, int x, int y, ofColor font0_Color = 255, ofColor colorBackground = ofColor{ 0, 200 }, bool useShadow = false, ofColor colorShadow = 128)
 	{
 		int _pad = 50;
 		float _round = 5;
@@ -297,7 +297,7 @@ namespace ofxSurfingHelpers2 {
 			// text shadow
 			if (useShadow) {
 				ofSetColor(colorShadow);
-				font.drawString(text, x+1, y+1);
+				font.drawString(text, x + 1, y + 1);
 			}
 
 			// text

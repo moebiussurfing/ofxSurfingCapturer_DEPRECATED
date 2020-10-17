@@ -69,6 +69,8 @@ CaptureWindow capturer;
 ### ofApp.cpp
 ```.cpp
 ofApp::setup(){
+	//capturer.setDephEnabled(false);// disable depth to avoid some fbo problems/bugs
+	//capturer.setCustomizeSection(ofRectangle{ 0, 0, canvasSize.get().x, canvasSize.get().y });// to capture a section only. call before setup
 	capturer.setup();
 }
 
