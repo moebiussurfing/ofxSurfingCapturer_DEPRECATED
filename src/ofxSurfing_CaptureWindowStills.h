@@ -3,7 +3,7 @@
 #include "ofMain.h"
 
 // TODO: 
-// + check/allow change window capture size without breaking the capturer
+// + check/allow change window capture size without breaking the capturer. not it's posible before call setup()
 
 #define ANTIALIAS_NUM_SAMPLES 16
 
