@@ -38,11 +38,16 @@ private:
 	bool bRecPrepared = false;
 	bool bRecording;
 	bool bShowInfo = true;
+	bool bError = false;
 
 private:
 	uint32_t timeStart;
 	std::string infoHelpKeys;
-
+	std::string infoFFmpeg;
+public:
+	void setShowMinimal(bool b) {
+		bShowMinimal = b;
+	};
 private:
 	bool bShowMinimal = true;// hide more info when recording to improve performance a little
 	bool isEncoding = false;
@@ -264,99 +269,70 @@ public:
 
 		if (bShowInfo && bActive) {
 
-			string str = "";
+			std::string str = "";
 
-			//--
+			//-
 
-			if (bShowMinimal && bRecording)// reduced info when recording to imrpove performance a little
+			// workaround: to usen when force stop encoding 
+			// i don't know how to stop the process without breaking the thread restart...
+			if (bError)
 			{
-				// animated points..
-				const int p = 30;//period in frames
-				int fn = ofGetFrameNum() % (p * 4);
-				bool b0, b1, b2;
-				b0 = (fn > p * 3);
-				b1 = (fn > p * 2);
-				b2 = (fn > p * 1);
-				string sp = "";
-				if (b0) sp += ".";
-				if (b1) sp += ".";
-				if (b2) sp += ".";
-				str += "RECORDING" + sp + "\n";
-
-				//str += "RECORDING...\n";
-
-				str += "FPS " + ofToString(ofGetFrameRate(), 0) + "\n";
-				str += "DURATION: " + calculateTime(getRecordedDuration()) + "\n";
-				str += "F9 : STOP";
-				// too much slow
-				//str += "Disk Stills " + ofToString(amountStills) + "\n";
-				//if (ofGetFrameNum() % 120 == 0) amountStills = dataDirectory.listDir();// refresh amount stills
-
+				if (ofGetFrameNum() % 120 < 90) {
+					str += "> ALERT! BROKEN FFmpeg THREAD !\n";
+					str += "> MUST RESTART THE APP...\n";
+				}
+				else str += " \n\n";
 			}
 			else
 			{
-				// 1. waiting mount: press F8
-				if (!bRecPrepared && !isThreadRunning() && !bRecording)
-				{
-					str += "F8  : MOUNT Recorder\n";
+				//--
 
-					// animated points..
-					const int p = 30;//period in frames
-					int fn = ofGetFrameNum() % (p * 4);
-					bool b0, b1, b2;
-					b0 = (fn > p * 3);
-					b1 = (fn > p * 2);
-					b2 = (fn > p * 1);
-					string sp = "";
-					if (b0) sp += ".";
-					if (b1) sp += ".";
-					if (b2) sp += ".";
-
-					str += "> PRESS F8" + sp + "\n";
+				if (!bShowMinimal && bRecording) {
+					if (ofGetFrameNum() % 120 == 0)
+					{
+						infoFFmpeg = "\n";
+						infoFFmpeg += "Texture copy       : " + ofToString(recorder.getAvgTimeTextureCopy()) + "\n";
+						infoFFmpeg += "GPU download       : " + ofToString(recorder.getAvgTimeGpuDownload()) + "\n";
+						infoFFmpeg += "Image encoding     : " + ofToString(recorder.getAvgTimeEncode()) + "\n";
+						infoFFmpeg += "File save (avg ms) : " + ofToString(recorder.getAvgTimeSave()) + "\n";
+						infoFFmpeg += "\n";
+					}
 				}
 
-				// 2. mounted, recording or running ffmpeg script
-				else if (bRecPrepared || bRecording || isThreadRunning())
+				if (bShowMinimal && bRecording)// reduced info when recording to imrpove performance a little
 				{
-					// cap info
-					str += "FPS " + ofToString(ofGetFrameRate(), 0) + "          " + ofToString(recorder.getFrame()) + " frames\n";
-					str += "WINDOW          " + ofToString(ofGetWidth()) + "x" + ofToString(ofGetHeight()) + "\n";
-					str += "RECORDER        " + ofToString(recorder.getWidth()) + "x" + ofToString(recorder.getHeight()) + "\n";
-					str += "FBO SIZE        " + ofToString(cap_w) + "x" + ofToString(cap_h) + "\n";
-					if (bCustomizeSection)
-					{
-						str += "SECTION         " + ofToString(rectSection.getX()) + "," + ofToString(rectSection.getY());
-						str += " " + ofToString(rectSection.getWidth()) + "x" + ofToString(rectSection.getHeight()) + "\n";
-					}
-					str += "Disk Stills     " + ofToString(amountStills) + "\n";
-					str += "\n";
+					//// animated points..
+					//const int p = 30;//period in frames
+					//int fn = ofGetFrameNum() % (p * 4);
+					//bool b0, b1, b2;
+					//b0 = (fn > p * 3);
+					//b1 = (fn > p * 2);
+					//b2 = (fn > p * 1);
+					//string sp = "";
+					//if (b0) sp += ".";
+					//if (b1) sp += ".";
+					//if (b2) sp += ".";
+					//str += "RECORDING" + sp + "\n";
 
-					if (bRecording)
-					{
-						str += "F9  : STOP\n";
-						str += "RECORD DURATION: " + ofToString(getRecordedDuration(), 1) + "\n";
+					str += "RECORDING...\n";
 
-						// error
-						if (bRecording) {
-							if (recorder.getAvgTimeSave() == 0) {
-								std::string ss;
-								const int p = 30;// blink period in frames
-								int fn = ofGetFrameNum() % p;
-								if (fn < p / 2) ss = "ERROR RECORDING!";
-								else ss = "";
-								str += ss + "\n";
-							}
-						}
-					}
-					else if (bRecPrepared || isThreadRunning())// mounted or running ffmpeg script
-					{
-						str += "F9  : START\n";
-						str += "F8  : UNMOUNT\n";
-						if ((!bFfmpegLocated) && ofGetFrameNum() % 60 < 20) str += "> ALERT! Missing ffmpeg.exe...";
-						str += "\n";
+					int _fps = ofGetFrameRate();
+					str += "FPS " + ofToString(_fps) + ((_fps < 59) ? " !" : "") + "\n";
+					str += "DURATION : " + calculateTime(getRecordedDuration()) + "\n";
+					//str += infoFFmpeg;
+					str += "F9 : STOP";
+					// too much slow
+					//str += "Disk Stills " + ofToString(amountStills) + "\n";
+					//if (ofGetFrameNum() % 120 == 0) amountStills = dataDirectory.listDir();// refresh amount stills
 
+				}
+				else
+				{
+					// 1. waiting mount: press F8
+					if (!bRecPrepared && !isThreadRunning() && !bRecording)
+					{
 						// animated points..
-						const int p = 30;// period in frames
+						const int p = 30;//period in frames
 						int fn = ofGetFrameNum() % (p * 4);
 						bool b0, b1, b2;
 						b0 = (fn > p * 3);
@@ -367,42 +343,104 @@ public:
 						if (b1) sp += ".";
 						if (b2) sp += ".";
 
-						if (isThreadRunning()) {
+						str += "> PRESS F8 TO MOUNT CAPTURER" + sp + "\n";
+					}
 
-							if (isEncoding) str += "> ENCODING VIDEO" + sp + " [" + ofToString(bUseFfmpegNvidiaGPU ? "GPU" : "CPU") + "]\n";
-							else if (isPlayingPLayer) str += "> PLAYING VIDEO\n";
+					// 2. mounted, recording or running ffmpeg script
+					else if (bRecPrepared || bRecording || isEncoding)
+					{
+						if (!isEncoding)
+						{
+							str += "FPS " + ofToString(ofGetFrameRate(), 0) + "          " + ofToString(recorder.getFrame()) + " frames\n";
+							str += "WINDOW          " + ofToString(ofGetWidth()) + "x" + ofToString(ofGetHeight()) + "\n";
+							str += "RECORDER        " + ofToString(recorder.getWidth()) + "x" + ofToString(recorder.getHeight()) + "\n";
+							str += "FBO SIZE        " + ofToString(cap_w) + "x" + ofToString(cap_h) + "\n";
 						}
-						else {
-							str += "> MOUNTED! READY" + sp + "\n";
-							if (b1 || b2) {
-								str += "> PRESS F9  TO START CAPTURER\n";
-								str += "> PRESS F11 TO ENCODE VIDEO\n";
+						if (bCustomizeSection)
+						{
+							str += "SECTION         " + ofToString(rectSection.getX(), 0) + "," + ofToString(rectSection.getY(), 0);
+							str += " " + ofToString(rectSection.getWidth(), 0) + "x" + ofToString(rectSection.getHeight(), 0) + "\n";
+						}
+						str += "Disk Stills     " + ofToString(amountStills) + "\n";
+						//str += "\n";
+
+						if (bRecording)
+						{
+							str += "F9  : STOP\n";
+							str += "RECORD DURATION: " + ofToString(getRecordedDuration(), 1) + "\n";
+							str += infoFFmpeg;
+
+							// error
+							if (bRecording) {
+								if (recorder.getAvgTimeSave() == 0) {
+									std::string ss;
+									const int p = 30;// blink period in frames
+									int fn = ofGetFrameNum() % p;
+									if (fn < p / 2) ss = "ERROR RECORDING!";
+									else ss = "";
+									str += ss + "\n";
+								}
+							}
+						}
+						else if (bRecPrepared || isEncoding)// mounted or running ffmpeg script
+						{
+							if ((!bFfmpegLocated) && ofGetFrameNum() % 60 < 20) str += "> ALERT! Missing FFmpeg.exe...";
+							str += "\n";
+
+							// animated points..
+							const int p = 30;// period in frames
+							int fn = ofGetFrameNum() % (p * 4);
+							bool b0, b1, b2;
+							b0 = (fn > p * 3);
+							b1 = (fn > p * 2);
+							b2 = (fn > p * 1);
+							string sp = "";
+							if (b0) sp += ".";
+							if (b1) sp += ".";
+							if (b2) sp += ".";
+
+							if (isThreadRunning()) {
+
+								if (isEncoding)
+								{
+									str += "> ENCODING VIDEO" + sp + " [" + ofToString(bUseFfmpegNvidiaGPU ? "GPU" : "CPU") + "]\n";
+								}
+								else if (isPlayingPLayer) str += "> PLAYING VIDEO\n";
 							}
 							else {
-								str += "\n\n";
+								str += "  MOUNTED! READY" + sp + "\n";
+								str += "> PRESS F8  TO UNMOUNT\n";
+								if (b1 || b2) {
+									str += "> PRESS F9  TO START CAPTURER\n";
+									str += "> PRESS F11 TO ENCODE VIDEO\n";
+								}
+								else {
+									str += "\n\n";
+								}
 							}
 						}
 					}
+				}
+
+				//-
+
+				if (bShowMinimal && !bRecording && !isEncoding)
+				{
+					str += infoHelpKeys;
 				}
 			}
 
 			//-
 
 			// draw text info
-			if (bShowMinimal && !bRecording)
-			{
-				str += infoHelpKeys;
-			}
-
 			float h = ofxSurfingHelpers2::getHeightBBtextBoxed(font, str);
 			y = ofGetHeight() - h - x + 8;// bad offset
-
 			ofxSurfingHelpers2::drawTextBoxed(font, str, x, y);
 
 			//-
 
 			// red blink circle
-			if ((bShowMinimal && bRecPrepared) && (!bRecording))
+			if ((bShowMinimal && bRecPrepared) && !bRecording && !bError)
 			{
 				float radius = 15;
 				int yy = y + radius;
@@ -439,17 +477,17 @@ public:
 
 			//-
 
-			// log
-			if (bRecording && !bShowMinimal)
-			{
-				if (ofGetFrameNum() % 60 == 0) {
-					ofLogWarning(__FUNCTION__) << ofGetFrameRate();
-					ofLogWarning(__FUNCTION__) << "Texture copy   : " << recorder.getAvgTimeTextureCopy();
-					ofLogWarning(__FUNCTION__) << "GPU download   : " << recorder.getAvgTimeGpuDownload();
-					ofLogWarning(__FUNCTION__) << "Image encoding : " << recorder.getAvgTimeEncode();
-					ofLogWarning(__FUNCTION__) << "File save	  : " << recorder.getAvgTimeSave() << endl;
-				}
-			}
+			//// log
+			//if (bRecording && !bShowMinimal)
+			//{
+			//	if (ofGetFrameNum() % 60 == 0) {
+			//		ofLogWarning(__FUNCTION__) << ofGetFrameRate();
+			//		ofLogWarning(__FUNCTION__) << "Texture copy   : " << recorder.getAvgTimeTextureCopy();
+			//		ofLogWarning(__FUNCTION__) << "GPU download   : " << recorder.getAvgTimeGpuDownload();
+			//		ofLogWarning(__FUNCTION__) << "Image encoding : " << recorder.getAvgTimeEncode();
+			//		ofLogWarning(__FUNCTION__) << "File save	  : " << recorder.getAvgTimeSave() << endl;
+			//	}
+			//}
 		}
 	}
 
@@ -628,17 +666,32 @@ public:
 			// join stills to video after capture
 			case OF_KEY_F11:
 			{
-				if (!isThreadRunning() && !bRecording)
+				if (!isThreadRunning() && !bRecording && bRecPrepared)
 				{
 					doRunFFmpegCommand();
 				}
 				else
 				{
-					ofLogWarning(__FUNCTION__) << "Skipped FFmpeg batch encoding: can't be recording or already encoding";
+					ofLogWarning(__FUNCTION__) << "Trying to force skip FFmpeg batch encoding: can't be recording or already encoding";
 
 					// TODO: BUG:
 					// when called stop, must restart the app...
-					//if (isThreadRunning()) stopThread();
+					if (isThreadRunning()) stopThread();
+
+					// TODO:
+					// force stop the thread
+					//waitForThread(true);
+					isEncoding = false;
+					isPlayingPLayer = false;
+					cout << "> FORCE STOP ENCODING PROCESS !" << endl;
+
+					stringstream someCmd;
+					someCmd.clear();
+					someCmd << "taskkill /F /IM ffmpeg.exe";
+					cout << someCmd << endl;
+					cout << ofSystem(someCmd.str().c_str()) << endl;
+
+					cout << "> DONE !" << endl;
 				}
 
 				if (amountStills == 0) {
@@ -690,13 +743,20 @@ private:
 		infoHelpKeys += "F5  : Set FullHD size"; infoHelpKeys += "\n";
 		infoHelpKeys += "F6  : Set optimal Instagram size"; infoHelpKeys += "\n";
 		infoHelpKeys += "F7  : Refresh Window size"; infoHelpKeys += "\n";
-		infoHelpKeys += "F8  : Mount Recorder"; infoHelpKeys += "\n";
-		infoHelpKeys += "F9  : Start/Stop Recording"; infoHelpKeys += "\n";
+		//infoHelpKeys += "F8  : Mount Recorder"; infoHelpKeys += "\n";
+		//infoHelpKeys += "F9  : Start/Stop Recording"; infoHelpKeys += "\n";
 		infoHelpKeys += "F10 : Capture Screenshot"; infoHelpKeys += "\n";
 		infoHelpKeys += "F11 : Run FFmpeg video Encoder"; infoHelpKeys += "\n";
 		infoHelpKeys += "Ctrl + Alt + BackSpace: Clear Stills";// info += "\n";
 		//info += "path Stills     : "+ _pathFolderStills; info += "\n";
 		//info += "path Screenshots: "+ _pathFolderSnapshots; info += "\n";
+
+		infoFFmpeg = "\n";
+		infoFFmpeg += "Texture copy       : " + ofToString(recorder.getAvgTimeTextureCopy()) + "\n";
+		infoFFmpeg += "GPU download       : " + ofToString(recorder.getAvgTimeGpuDownload()) + "\n";
+		infoFFmpeg += "Image encoding     : " + ofToString(recorder.getAvgTimeEncode()) + "\n";
+		infoFFmpeg += "File save (avg ms) : " + ofToString(recorder.getAvgTimeSave()) + "\n";
+		infoFFmpeg += "\n";
 	}
 
 	// call ffmpeg command
@@ -928,6 +988,7 @@ private:
 				isPlayingPLayer = false;
 				cout << "> VIDEOPLAYER CLOSED !" << endl;
 				cout << "> ENCODING PROCESS / THREAD FINISHED !" << endl;
+				bError = true;// workaround. i don't know how to stop the process without breaking the thread restart...
 			}
 		}
 	}
