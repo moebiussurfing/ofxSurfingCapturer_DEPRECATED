@@ -4,6 +4,8 @@
 
 // TODO: 
 // + check/allow change window capture size without breaking the capturer. not it's posible before call setup()
+// + allow gif exporter
+// + allow instagram ready export
 
 #define ANTIALIAS_NUM_SAMPLES 16
 
@@ -27,16 +29,16 @@ private:
 	ofImageFormat stillFormat;
 
 private:
-	string _pathFolderCaptures;
-	string _pathFolderStills;
-	string _pathFolderSnapshots;
+	std::string _pathFolderCaptures;
+	std::string _pathFolderStills;
+	std::string _pathFolderSnapshots;
 
 	ofDirectory dataDirectory;
 	int amountStills = 0;
 
 private:
-	bool bRecPrepared = false;
-	bool bRecording;
+	bool isMounted = false;
+	bool isRecording;
 	bool bShowInfo = true;
 	bool bError = false;
 
@@ -44,9 +46,13 @@ private:
 	uint32_t timeStart;
 	std::string infoHelpKeys;
 	std::string infoFFmpeg;
+	std::string info;
 public:
 	void setShowMinimal(bool b) {
 		bShowMinimal = b;
+	};
+	void setToggleShowMinimal() {
+		bShowMinimal = !bShowMinimal;
 	};
 private:
 	bool bShowMinimal = true;// hide more info when recording to improve performance a little
@@ -54,7 +60,7 @@ private:
 	bool isPlayingPLayer = false;
 
 	ofRectangle rectSection;// customize capture section. TODO: hardcoded to 0,0 position yet!
-	bool bCustomizeSection = false;
+	bool isSectionCustomized = false;
 
 private:
 	std::string pathRoot;
@@ -86,7 +92,7 @@ public:
 		_pathFolderStills = _pathFolderCaptures + "Stills\\";
 		_pathFolderSnapshots = _pathFolderCaptures + "Snapshots\\";
 
-		string _font = "assets/fonts/overpass-mono-bold.otf";
+		std::string _font = "assets/fonts/overpass-mono-bold.otf";
 		bool b = font.load(_font, 8);
 		if (!b) font.load(OF_TTF_SERIF, 8);// solve font file not found OF bundled alternative font
 
@@ -123,7 +129,7 @@ public:
 
 		buildHepKeysInfo();
 
-		if (!bCustomizeSection) {
+		if (!isSectionCustomized) {
 			cap_w = ofGetWidth();
 			cap_h = ofGetHeight();
 			buildAllocateFbo();
@@ -210,7 +216,7 @@ public:
 	//--------------------------------------------------------------
 	void setCustomizeSection(ofRectangle r) {
 		rectSection = r;
-		bCustomizeSection = true;
+		isSectionCustomized = true;
 
 		cap_w = rectSection.getWidth();
 		cap_h = rectSection.getHeight();
@@ -236,9 +242,9 @@ public:
 
 			//-
 
-			if (bRecPrepared)
+			if (isMounted)
 			{
-				if (bRecording && ofGetFrameNum() > 0)
+				if (isRecording && ofGetFrameNum() > 0)
 				{
 					recorder.save(cap_Fbo.getTexture());
 				}
@@ -250,6 +256,7 @@ public:
 	void draw() {// must draw the scene content to show
 		if (bActive)
 		{
+			// BUG: depth/antialias
 			blitFbo.begin();
 			{
 				ofClear(0, 255);
@@ -259,8 +266,20 @@ public:
 			blitFbo.end();
 			blitFbo.draw(0, 0);
 
-			//cap_Fbo.draw(0, 0);// drawing is required outside fbo
 			// BUG: depth/antialias
+			//cap_Fbo.draw(0, 0);// drawing is required outside fbo
+
+			// preview custom section rect borders
+			if (isSectionCustomized && isMounted && !isRecording) {
+				ofPushStyle();
+				int _period = 15;
+				bool b = ofGetFrameNum() % _period > _period / 2;
+				ofSetColor(ofColor(ofColor::blue, (b ? 255 : 128)));
+				ofNoFill();
+				ofSetLineWidth(1.0f);
+				ofDrawRectangle(rectSection);
+				ofPopStyle();
+			}
 		}
 	}
 
@@ -269,7 +288,19 @@ public:
 
 		if (bShowInfo && bActive) {
 
-			std::string str = "";
+			info = "";
+
+			// animated points..
+			std::string sp = "";
+			const int p = 30;// period in frames
+			const int fn = ofGetFrameNum() % (p * 4);
+			bool b0, b1, b2;
+			b0 = (fn > p * 3);
+			b1 = (fn > p * 2);
+			b2 = (fn > p * 1);
+			if (b0) sp += ".";
+			if (b1) sp += ".";
+			if (b2) sp += ".";
 
 			//-
 
@@ -277,17 +308,18 @@ public:
 			// i don't know how to stop the process without breaking the thread restart...
 			if (bError)
 			{
-				if (ofGetFrameNum() % 120 < 90) {
-					str += "> ALERT! BROKEN FFmpeg THREAD !\n";
-					str += "> MUST RESTART THE APP...\n";
+				if (ofGetFrameNum() % 120 < 90)
+				{
+					info += "> ALERT! BROKEN FFmpeg THREAD !\n";
+					info += "> MUST RESTART THE APP...\n";
 				}
-				else str += " \n\n";
+				else info += " \n\n";
 			}
 			else
 			{
 				//--
 
-				if (!bShowMinimal && bRecording) {
+				if (!bShowMinimal && isRecording) {
 					if (ofGetFrameNum() % 120 == 0)
 					{
 						infoFFmpeg = "\n";
@@ -299,148 +331,118 @@ public:
 					}
 				}
 
-				if (bShowMinimal && bRecording)// reduced info when recording to imrpove performance a little
+				if (bShowMinimal && isRecording)// reduced info when recording to imrpove performance a little
 				{
-					//// animated points..
-					//const int p = 30;//period in frames
-					//int fn = ofGetFrameNum() % (p * 4);
-					//bool b0, b1, b2;
-					//b0 = (fn > p * 3);
-					//b1 = (fn > p * 2);
-					//b2 = (fn > p * 1);
-					//string sp = "";
-					//if (b0) sp += ".";
-					//if (b1) sp += ".";
-					//if (b2) sp += ".";
-					//str += "RECORDING" + sp + "\n";
-
-					str += "RECORDING...\n";
-
+					info += "RECORDING...\n";
 					int _fps = ofGetFrameRate();
-					str += "FPS " + ofToString(_fps) + ((_fps < 59) ? " !" : "") + "\n";
-					str += "DURATION : " + calculateTime(getRecordedDuration()) + "\n";
-					//str += infoFFmpeg;
-					str += "F9 : STOP";
+					info += "FPS " + ofToString(_fps) + ((_fps < 59) ? " !" : "") + "\n";
+					info += "DURATION : " + calculateTime(getRecordedDuration()) + "\n";
+					//info += infoFFmpeg;
+					info += "F9 : STOP\n";
 					// too much slow
-					//str += "Disk Stills " + ofToString(amountStills) + "\n";
+					//info += "Disk Stills " + ofToString(amountStills) + "\n";
 					//if (ofGetFrameNum() % 120 == 0) amountStills = dataDirectory.listDir();// refresh amount stills
+					info += "M  : Minimal Info " + ofToString(bShowMinimal ? "ON" : "OFF") + "\n";
 
 				}
 				else
 				{
 					// 1. waiting mount: press F8
-					if (!bRecPrepared && !isThreadRunning() && !bRecording)
+					if (!isMounted && !isThreadRunning() && !isRecording)
 					{
-						// animated points..
-						const int p = 30;//period in frames
-						int fn = ofGetFrameNum() % (p * 4);
-						bool b0, b1, b2;
-						b0 = (fn > p * 3);
-						b1 = (fn > p * 2);
-						b2 = (fn > p * 1);
-						string sp = "";
-						if (b0) sp += ".";
-						if (b1) sp += ".";
-						if (b2) sp += ".";
-
-						str += "> PRESS F8 TO MOUNT CAPTURER" + sp + "\n";
+						info += "> PRESS F8 TO MOUNT CAPTURER" + sp + "\n";
+						info += "M  : Minimal Info " + ofToString(bShowMinimal ? "ON" : "OFF") + "\n";
 					}
 
 					// 2. mounted, recording or running ffmpeg script
-					else if (bRecPrepared || bRecording || isEncoding)
+					else if ((isMounted || isRecording || isEncoding))
 					{
 						if (!isEncoding)
 						{
-							str += "FPS " + ofToString(ofGetFrameRate(), 0) + "          " + ofToString(recorder.getFrame()) + " frames\n";
-							str += "WINDOW          " + ofToString(ofGetWidth()) + "x" + ofToString(ofGetHeight()) + "\n";
-							str += "RECORDER        " + ofToString(recorder.getWidth()) + "x" + ofToString(recorder.getHeight()) + "\n";
-							str += "FBO SIZE        " + ofToString(cap_w) + "x" + ofToString(cap_h) + "\n";
+							info += "FPS " + ofToString(ofGetFrameRate(), 0) + "          " + ofToString(recorder.getFrame()) + " frames\n";
+							info += "WINDOW          " + ofToString(ofGetWidth()) + "x" + ofToString(ofGetHeight()) + "\n";
+							info += "RECORDER        " + ofToString(recorder.getWidth()) + "x" + ofToString(recorder.getHeight()) + "\n";
+							info += "FBO SIZE        " + ofToString(cap_w) + "x" + ofToString(cap_h) + "\n";
 						}
-						if (bCustomizeSection)
+						if (isSectionCustomized)
 						{
-							str += "SECTION         " + ofToString(rectSection.getX(), 0) + "," + ofToString(rectSection.getY(), 0);
-							str += " " + ofToString(rectSection.getWidth(), 0) + "x" + ofToString(rectSection.getHeight(), 0) + "\n";
+							info += "SECTION         " + ofToString(rectSection.getX(), 0) + "," + ofToString(rectSection.getY(), 0);
+							info += " " + ofToString(rectSection.getWidth(), 0) + "x" + ofToString(rectSection.getHeight(), 0) + "\n";
 						}
-						str += "Disk Stills     " + ofToString(amountStills) + "\n";
-						//str += "\n";
+						info += "Disk Stills     " + ofToString(amountStills) + "\n";
+						//info += "\n";
 
-						if (bRecording)
+						if (isRecording)
 						{
-							str += "F9  : STOP\n";
-							str += "RECORD DURATION: " + ofToString(getRecordedDuration(), 1) + "\n";
-							str += infoFFmpeg;
+							info += "F9  : STOP\n";
+							info += "RECORD DURATION: " + ofToString(getRecordedDuration(), 1) + "\n";
+							info += infoFFmpeg;
 
 							// error
-							if (bRecording) {
+							if (isRecording) {
 								if (recorder.getAvgTimeSave() == 0) {
 									std::string ss;
 									const int p = 30;// blink period in frames
 									int fn = ofGetFrameNum() % p;
 									if (fn < p / 2) ss = "ERROR RECORDING!";
 									else ss = "";
-									str += ss + "\n";
+									info += ss + "\n";
 								}
 							}
 						}
-						else if (bRecPrepared || isEncoding)// mounted or running ffmpeg script
+						else if (isMounted || isEncoding)// mounted or running ffmpeg script
 						{
-							if ((!bFfmpegLocated) && ofGetFrameNum() % 60 < 20) str += "> ALERT! Missing FFmpeg.exe...";
-							str += "\n";
-
-							// animated points..
-							const int p = 30;// period in frames
-							int fn = ofGetFrameNum() % (p * 4);
-							bool b0, b1, b2;
-							b0 = (fn > p * 3);
-							b1 = (fn > p * 2);
-							b2 = (fn > p * 1);
-							string sp = "";
-							if (b0) sp += ".";
-							if (b1) sp += ".";
-							if (b2) sp += ".";
+							if ((!bFfmpegLocated) && ofGetFrameNum() % 60 < 20) info += "> ALERT! Missing FFmpeg.exe...";
+							info += "\n";
 
 							if (isThreadRunning()) {
 
 								if (isEncoding)
 								{
-									str += "> ENCODING VIDEO" + sp + " [" + ofToString(bUseFfmpegNvidiaGPU ? "GPU" : "CPU") + "]\n";
+									info += "> ENCODING VIDEO" + sp + " [" + ofToString(bUseFfmpegNvidiaGPU ? "GPU" : "CPU") + "]\n";
 								}
-								else if (isPlayingPLayer) str += "> PLAYING VIDEO\n";
+								else if (isPlayingPLayer) info += "> PLAYING VIDEO\n";
 							}
 							else {
-								str += "  MOUNTED! READY" + sp + "\n";
-								str += "> PRESS F8  TO UNMOUNT\n";
+								info += "  MOUNTED! READY" + sp + "\n";
 								if (b1 || b2) {
-									str += "> PRESS F9  TO START CAPTURER\n";
-									str += "> PRESS F11 TO ENCODE VIDEO\n";
+									info += "> PRESS F9  TO START CAPTURER\n";
+									info += "> PRESS F11 TO ENCODE VIDEO\n";
 								}
 								else {
-									str += "\n\n";
+									info += " \n \n";
 								}
+								info += "> PRESS F8  TO UNMOUNT\n";
 							}
 						}
+						//else
+						//{
+						//	info += "\n\n";
+						//}
 					}
 				}
 
 				//-
 
-				if (bShowMinimal && !bRecording && !isEncoding)
+				if (!bShowMinimal && (!isRecording || !isEncoding))
 				{
-					str += infoHelpKeys;
+					info += infoHelpKeys;
+					info += "\n";
+					info += "M  : Minimal Info " + ofToString(bShowMinimal ? "ON" : "OFF") + "\n";
 				}
 			}
 
 			//-
 
 			// draw text info
-			float h = ofxSurfingHelpers2::getHeightBBtextBoxed(font, str);
+			float h = ofxSurfingHelpers2::getHeightBBtextBoxed(font, info);
 			y = ofGetHeight() - h - x + 8;// bad offset
-			ofxSurfingHelpers2::drawTextBoxed(font, str, x, y);
+			ofxSurfingHelpers2::drawTextBoxed(font, info, x, y);
 
 			//-
 
 			// red blink circle
-			if ((bShowMinimal && bRecPrepared) && !bRecording && !bError)
+			if ((!bShowMinimal) && (isMounted || !bError))
 			{
 				float radius = 15;
 				int yy = y + radius;
@@ -451,7 +453,7 @@ public:
 					ofColor c1{ ofColor(0,128) };
 					ofColor c2{ ofColor(ofColor::red,200) };
 					ofSetLineWidth(1.f);
-					if (bRecording)
+					if (isRecording)
 					{
 						ofFill();
 						ofSetColor(c2);
@@ -460,7 +462,7 @@ public:
 						ofSetColor(c1);
 						ofDrawCircle(ofPoint(xx, yy), radius);
 					}
-					else if (bRecPrepared)
+					else if (isMounted)
 					{
 						if (ofGetFrameNum() % 60 < 20) {
 							ofFill();
@@ -474,20 +476,6 @@ public:
 					ofPopStyle();
 				}
 			}
-
-			//-
-
-			//// log
-			//if (bRecording && !bShowMinimal)
-			//{
-			//	if (ofGetFrameNum() % 60 == 0) {
-			//		ofLogWarning(__FUNCTION__) << ofGetFrameRate();
-			//		ofLogWarning(__FUNCTION__) << "Texture copy   : " << recorder.getAvgTimeTextureCopy();
-			//		ofLogWarning(__FUNCTION__) << "GPU download   : " << recorder.getAvgTimeGpuDownload();
-			//		ofLogWarning(__FUNCTION__) << "Image encoding : " << recorder.getAvgTimeEncode();
-			//		ofLogWarning(__FUNCTION__) << "File save	  : " << recorder.getAvgTimeSave() << endl;
-			//	}
-			//}
 		}
 	}
 
@@ -537,6 +525,7 @@ public:
 		// not block the drawing
 		startThread();
 	}
+
 	//--------------------------------------------------------------
 	void setActive(bool b) {
 		bActive = b;
@@ -591,7 +580,15 @@ public:
 				setToggleVisibleInfo();
 				break;
 
-				// set Full HD
+				// toggle show minimal
+			case 'M':
+			{
+				setToggleShowMinimal();
+				ofLogNotice(__FUNCTION__) << "bShowMinimal: " << (bShowMinimal ? "ON" : "OFF");
+			}
+			break;
+
+			// set Full HD
 			case OF_KEY_F5:
 			{
 				ofSetWindowShape(1920, 1080);
@@ -599,6 +596,8 @@ public:
 			}
 			break;
 
+			// TODO:
+			// allow resize on runtime
 			// set instagram size
 			case OF_KEY_F6:
 			{
@@ -622,25 +621,25 @@ public:
 				// mount prepare record
 			case OF_KEY_F8:
 			{
-				bRecPrepared = !bRecPrepared;
-				ofLogWarning(__FUNCTION__) << "Mount: " << (bRecPrepared ? "ON" : "OFF");
+				isMounted = !isMounted;
+				ofLogWarning(__FUNCTION__) << "Mount: " << (isMounted ? "ON" : "OFF");
 			}
 			break;
 
 			// start recording
 			case OF_KEY_F9:
 			{
-				if (bRecording)// do stop
+				if (isRecording)// do stop
 				{
 					ofLogWarning(__FUNCTION__) << "Stop Recording";
 
-					//bRecPrepared = false;
-					bRecording = false;
+					//isMounted = false;
+					isRecording = false;
 					amountStills = dataDirectory.listDir();
 				}
-				else if (bRecPrepared)// do start
+				else if (isMounted)// do start
 				{
-					bRecording = true;
+					isRecording = true;
 					timeStart = ofGetElapsedTimeMillis();
 					ofLogWarning(__FUNCTION__) << "Start Recording into: " << _pathFolderStills;
 				}
@@ -651,8 +650,8 @@ public:
 			// take screenshot
 			case OF_KEY_F10:
 			{
-				string _fileName = "snapshot_" + ofGetTimestampString() + ".png";
-				string _pathFilename = ofToDataPath(_pathFolderSnapshots + _fileName, true);//bin/data
+				std::string _fileName = "snapshot_" + ofGetTimestampString() + ".png";
+				std::string _pathFilename = ofToDataPath(_pathFolderSnapshots + _fileName, true);//bin/data
 
 				ofImage img;
 				img.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
@@ -666,7 +665,7 @@ public:
 			// join stills to video after capture
 			case OF_KEY_F11:
 			{
-				if (!isThreadRunning() && !bRecording && bRecPrepared)
+				if (!isThreadRunning() && !isRecording && isMounted)
 				{
 					doRunFFmpegCommand();
 				}
@@ -720,7 +719,7 @@ public:
 
 	//--------------------------------------------------------------
 	void windowResized(int w, int h) {// must be called to resize the fbo and video resolution
-		if (!bCustomizeSection && bActive) // we don't want to resize the canvas when  custom section is enabled
+		if (!isSectionCustomized && bActive) // we don't want to resize the canvas when  custom section is enabled
 		{
 			cap_w = w;
 			cap_h = h;
@@ -740,6 +739,7 @@ private:
 		infoHelpKeys = "\n";
 		infoHelpKeys += "HELP KEYS"; infoHelpKeys += "\n";
 		infoHelpKeys += "h   : Show Help info"; infoHelpKeys += "\n";
+		infoHelpKeys += "M   : Minimal Info " + ofToString(bShowMinimal ? "ON" : "OFF") + "\n";
 		infoHelpKeys += "F5  : Set FullHD size"; infoHelpKeys += "\n";
 		infoHelpKeys += "F6  : Set optimal Instagram size"; infoHelpKeys += "\n";
 		infoHelpKeys += "F7  : Refresh Window size"; infoHelpKeys += "\n";
@@ -768,7 +768,7 @@ private:
 			ofLogWarning(__FUNCTION__) << endl;
 			cout << (__FUNCTION__) << endl;
 
-			string warninglog = "";
+			std::string warninglog = "";
 			warninglog += "> WARNING! ofApp.exe must run as Administrator !\n";
 			warninglog += "> WARNING! ffmpeg.exe must be located on: " + pathRoot + "/ffmpeg.exe !\n";
 
@@ -1000,7 +1000,7 @@ private:
 #define SECS_PER_MIN 60
 #define SECS_PER_HOUR 3600
 	//--------------------------------------------------------------
-	string calculateTime(float _time) {
+	std::string calculateTime(float _time) {
 
 		int seconds;
 		int minutes;
@@ -1012,8 +1012,8 @@ private:
 		mins_left = minutes % SECS_PER_MIN;
 		secs_left = seconds % SECS_PER_MIN;
 
-		string mins;
-		string secs;
+		std::string mins;
+		std::string secs;
 
 		if (mins_left < 10) {
 			mins = "0" + ofToString(mins_left);

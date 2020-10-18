@@ -70,7 +70,7 @@ private:
 	ofxFastFboReader cap_Reader;
 	ofFbo::Settings cap_Fbo_Settings;
 
-	bool bRecPrepared = false;
+	bool isMounted = false;
 	int cap_w, cap_h;
 	int cap_Bitrate;
 	int cap_Framerate;
@@ -220,7 +220,7 @@ public:
 
 		//windows ffmpeg screen recorder
 #ifdef USE_FFMPEG_RECORDER
-		if (bRecPrepared)
+		if (isMounted)
 		{
 			cap_Fbo.begin();
 
@@ -236,7 +236,7 @@ public:
 
 		//windows ffmpeg screen recorder
 #ifdef USE_FFMPEG_RECORDER
-		if (bRecPrepared) {
+		if (isMounted) {
 			//ofClearAlpha();
 			cap_Fbo.end();
 
@@ -294,7 +294,7 @@ public:
 		//TODO: must improve performance using less draw calls...
 		string str = "";
 
-		if (bRecPrepared || cap_Recorder.isRecording()) {
+		if (isMounted || cap_Recorder.isRecording()) {
 
 			//cap info
 			str += "FFMPEG SETTINGS\n";
@@ -317,7 +317,7 @@ public:
 				str += "KEY F9: STOP";
 				str += "\n";
 			}
-			else if (bRecPrepared)
+			else if (isMounted)
 			{
 				str += "RECORD MOUNTED. READY...";
 				str += "\n";
@@ -364,7 +364,7 @@ public:
 				ofSetColor(ofColor::black);
 				ofDrawCircle(ofPoint(x + radius, y), radius);
 			}
-			else if (bRecPrepared)
+			else if (isMounted)
 			{
 				if (ofGetFrameNum() % 60 < 20) {
 					ofFill();
@@ -444,7 +444,7 @@ public:
 
 		//prepare video record
 		case OF_KEY_F8:
-			bRecPrepared = !bRecPrepared;
+			isMounted = !isMounted;
 			break;
 
 			//start video record
@@ -455,7 +455,7 @@ public:
 				cap_Recorder.stop();
 				ofLogWarning(__FUNCTION__) << "Stop Recording";
 
-				bRecPrepared = false;
+				isMounted = false;
 			}
 			else//start
 			{
