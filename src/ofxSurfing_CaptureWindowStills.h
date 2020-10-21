@@ -108,6 +108,53 @@ private:
 	bool bOverwriteOutVideo = true;// we only want the last video. we use same name for all re takes and overwrite.
 
 public:
+	// this allows to change the destination folder on runtime
+	// making easier to sort our captures
+	// will create the folder if do not exist
+	//--------------------------------------------------------------
+	void setPathCaptures(std::string path) {
+
+		// workaound to adapt path formats between different platforms projects
+#ifdef TARGET_WIN32
+		ofStringReplace(path, "/", "\\");
+#endif
+#ifdef TARGET_OSX
+		ofStringReplace(path, "\\", "/");
+#endif
+
+#ifdef TARGET_WIN32
+		pathFolderCaptures = path + "\\";
+		pathFolderStills = pathFolderCaptures + "Stills\\";
+		pathFolderSnapshots = pathFolderCaptures + "Snapshots\\";
+#endif
+#ifdef TARGET_OSX
+		pathFolderCaptures = path + "/";
+		pathFolderStills = pathFolderCaptures + "Stills/";
+		pathFolderSnapshots = pathFolderCaptures + "Snapshots/";
+#endif
+
+		ofxSurfingHelpers2::CheckFolder(pathFolderCaptures);
+		ofxSurfingHelpers2::CheckFolder(pathFolderStills);
+		ofxSurfingHelpers2::CheckFolder(pathFolderSnapshots);
+
+		buildHepKeysInfo();
+
+		if (!isSectionCustomized) {
+			cap_w = ofGetWidth();
+			cap_h = ofGetHeight();
+			buildAllocateFbo();
+		}
+
+		// stills folder
+		// let the folder open to list amount files sometimes...
+		dataDirectory.open(ofToDataPath(pathFolderStills, true));
+		amountStills = dataDirectory.listDir();
+
+		// re set ofxTextureRecorder
+		recorder.setPath(pathFolderStills);
+	}
+
+public:
 	//--------------------------------------------------------------
 	CaptureWindow()
 	{
@@ -120,7 +167,6 @@ public:
 		pathFolderSnapshots = pathFolderCaptures + "Snapshots\\";
 		setPathRoot(ofToDataPath("\\", true));
 #endif
-
 #ifdef TARGET_OSX
 		pathFolderCaptures = "Captures/";
 		pathFolderStills = pathFolderCaptures + "Stills/";
@@ -131,7 +177,7 @@ public:
 		//std::string _font = "assets/fonts/overpass-mono-bold.otf";
 		std::string _font = "assets/fonts/Hack-Bold.ttf";
 		bool b = font.load(_font, 8);
-		if (!b) font.load(OF_TTF_SERIF, 8);// solve font file not found OF bundled alternative font
+		if (!b) font.load(OF_TTF_SERIF, 8);// solve font-file-not-found with OF bundled alternative font
 	};
 
 	//--------------------------------------------------------------
@@ -150,7 +196,7 @@ public:
 		//--------------------------------------------------------------
 		void setup(std::string path = "Captures/", ofImageFormat format = OF_IMAGE_FORMAT_TIFF) {
 #endif
-			ofLogWarning(__FUNCTION__) << "path: " << path << " ofImageFormat: " << format;
+			ofLogNotice(__FUNCTION__) << "path: " << path << " ofImageFormat: " << format;
 
 			// we can select a still format passing one ofImageFormat like this ones:
 			// OF_IMAGE_FORMAT_BMP = 0,
@@ -202,7 +248,7 @@ public:
 			// let the folder open to list amount files sometimes...
 			dataDirectory.open(ofToDataPath(pathFolderStills, true));
 			amountStills = dataDirectory.listDir();
-	}
+		}
 
 public:
 	//--------------------------------------------------------------
@@ -251,6 +297,11 @@ public:
 		settings.numThreads = 12;
 		settings.maxMemoryUsage = 9000000000;
 
+		// NOTE: about my ofxTextureRecorder fork
+		// this setPath is not required on my customized fork of ofxTextureRecorder
+		// bc it's already implemented using settings
+		//settings.folderPath = "path";
+
 		recorder.setPath(pathFolderStills);
 		recorder.setup(settings);
 	}
@@ -286,7 +337,7 @@ public:
 				bShowMinimal_PRE = bShowMinimal;
 				buildHepKeysInfo();
 			}
-			
+
 			//-
 
 			cap_Fbo.begin();
@@ -337,7 +388,7 @@ public:
 				bool b = ofGetFrameNum() % _period > _period / 2;
 				ofColor c = ofColor::white;
 				//ofColor c = ofColor::blue;
-				ofSetColor(ofColor(c, (b ? 128 : 32)));
+				ofSetColor(ofColor(c, (b ? 16 : 8)));
 				ofNoFill();
 				ofSetLineWidth(1.0f);
 				ofDrawRectangle(rectSection);
@@ -361,9 +412,9 @@ public:
 			b0 = (fn > p * 3);
 			b1 = (fn > p * 2);
 			b2 = (fn > p * 1);
-			if (b0) sp += ".";
-			if (b1) sp += ".";
-			if (b2) sp += ".";
+			if (b0) sp += "...";
+			else if (b1) sp += ".. ";
+			else if (b2) sp += ".  ";
 
 			//-
 
@@ -371,19 +422,19 @@ public:
 			// i don't know how to stop the process without breaking the thread restart...
 			if (bError)
 			{
-				info += "> ALERT! BROKEN FFmpeg THREAD !\n";
-				info += "> MUST RESTART THE APP" + sp + "\n";
+				//info += "> ALERT! BROKEN FFmpeg THREAD !\n";
+				//info += "> MUST RESTART THE APP" + sp + "\n";
 
-				//// blink
-				//if (ofGetFrameNum() % 120 < 90)
-				//{
-				//	info += "> ALERT! BROKEN FFmpeg THREAD !\n";
-				//	info += "> MUST RESTART THE APP...\n";
-				//}
-				//else {
-				//	info += "                               \n";
-				//	info += "                               \n";
-				//}
+				// blink
+				if (ofGetFrameNum() % 120 < 90)
+				{
+					info += "> ALERT! BROKEN FFmpeg THREAD !\n";
+					info += "> MUST RESTART THE APP...\n";
+				}
+				else {
+					info += "                                \n";
+					info += "                                \n";
+				}
 			}
 			else
 			{
@@ -403,25 +454,25 @@ public:
 
 				if (bShowMinimal && isRecording)// reduced info when recording to imrpove performance a little
 				{
-					info += "RECORDING...\n";
+					info += "RECORDING" + sp + "\n";
 					int _fps = ofGetFrameRate();
-					info += "FPS " + ofToString(_fps) + ((_fps < 59) ? " !" : "") + "\n";// with alert
+					info += "FPS " + ofToString(_fps) + ((_fps < 59) ? " !" : "") + "\n";// alert when fps performance drops..
 					info += "DURATION : " + ofxSurfingHelpers2::calculateTime(getRecordedDuration()) + "\n";
 					//info += infoFFmpeg;
 					info += "F9 : STOP\n";
 					// too much slow also when checking every 2 seconds...
 					//info += "Disk Stills " + ofToString(amountStills) + "\n";
 					//if (ofGetFrameNum() % 120 == 0) amountStills = dataDirectory.listDir();// refresh amount stills
-					info += "M  : Minimal Info " + ofToString(bShowMinimal ? "ON" : "OFF") + "\n";
-
+					info += "M  : SET MINIMAL INFO " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
 				}
 				else
 				{
 					// 1. waiting mount: press F8
-					if (!isMounted && !isThreadRunning() && !isRecording)
+					if (!isMounted && !isEncoding && !isRecording)
+						//if (!isMounted && !isThreadRunning() && !isRecording)
 					{
 						info += "> PRESS F8 TO MOUNT CAPTURER" + sp + "\n";
-						if (bShowMinimal) info += "M : Minimal Info " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
+						if (bShowMinimal) info += "> PRESS M  TO SET MINIMAL INFO " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
 					}
 
 					// 2. mounted, recording or running ffmpeg script
@@ -515,6 +566,7 @@ public:
 					float radius = 10;
 					int yy = y + radius - 10;
 					int xx = x + ww - radius + 10;
+					if (bShowMinimal) xx += 5;
 
 					// only while not encoding video
 					//if (!isThreadRunning())
@@ -737,7 +789,8 @@ public:
 			// join stills to video after capture
 			case OF_KEY_F11:
 			{
-				if (!isThreadRunning() && !isRecording && isMounted)
+				if (!isEncoding && !isRecording && isMounted)
+					//if (!isThreadRunning() && !isRecording && isMounted)
 				{
 					doRunFFmpegCommand();
 				}
@@ -747,7 +800,7 @@ public:
 
 					// TODO: BUG:
 					// when called stop, must restart the app...
-					if (isThreadRunning()) stopThread();
+					if (isThreadRunning() && isEncoding) stopThread();
 
 					// TODO:
 					// force stop the thread
@@ -816,8 +869,8 @@ private:
 		infoHelpKeys = "\n";
 		infoHelpKeys += "HELP KEYS"; infoHelpKeys += "\n";
 		infoHelpKeys += "h   : Show Help info"; infoHelpKeys += "\n";
-		infoHelpKeys += "M   : Minimal Info ON/OFF\n";
-		//infoHelpKeys += "M   : Minimal Info " + ofToString(bShowMinimal ? "ON" : "OFF") + "\n";
+		//infoHelpKeys += "M   : Minimal Info ON/OFF\n";
+		infoHelpKeys += "M   : Minimal Info set " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
 		infoHelpKeys += "F5  : Set FullHD size"; infoHelpKeys += "\n";
 		infoHelpKeys += "F6  : Set optimal Instagram size"; infoHelpKeys += "\n";
 		infoHelpKeys += "F7  : Refresh Window size"; infoHelpKeys += "\n";
@@ -830,8 +883,9 @@ private:
 		infoHelpKeys += "Ctrl + Alt + BackSpace: Clear Stills"; infoHelpKeys += "\n";
 		if (!bShowMinimal) {
 			infoHelpKeys += "\n";
-			infoHelpKeys += "path Stills     : " + pathFolderStills; infoHelpKeys += "\n";
-			infoHelpKeys += "path Screenshots: " + pathFolderSnapshots; infoHelpKeys += "\n";
+			infoHelpKeys += "PATHS\n";
+			infoHelpKeys += "Stills      : " + pathFolderStills; infoHelpKeys += "\n";
+			infoHelpKeys += "Screenshots : " + pathFolderSnapshots; infoHelpKeys += "\n";
 			infoHelpKeys += pathRoot + "\n";
 			//infoHelpKeys += "path root : \n" + pathRoot; infoHelpKeys += "\n";
 		}
@@ -862,7 +916,8 @@ private:
 
 			cout << endl << warninglog << endl;
 
-			if (isThreadRunning())
+			if (isEncoding)
+				//if (isThreadRunning())
 			{
 				// build ffmpeg command
 
@@ -1007,7 +1062,7 @@ private:
 						//cmdEncodingArgs += "-preset lossless ";	// 10secs = 150MB
 						//cmdEncodingArgs += "-profile high ";
 						//cmdEncodingArgs += "-pix_fmt yuv444p ";// 10secs = 300MB. doubles size! raw format but too heavy weight!
-					}
+				}
 #endif
 					// append
 					cmd += cmdEncodingArgs;
@@ -1029,7 +1084,7 @@ private:
 					cout << endl << endl;
 					cout << "> Quality Encoding arguments: " << endl << cmdEncodingArgs;
 					cout << endl << endl;
-				}
+			}
 
 				//-
 
@@ -1100,7 +1155,7 @@ private:
 				// TODO:
 				// should check system log to know if failed..
 				//bError = true;// workaround. i don't know how to stop the process without breaking the thread restart...
-			}
 		}
+	}
 	}
 };
