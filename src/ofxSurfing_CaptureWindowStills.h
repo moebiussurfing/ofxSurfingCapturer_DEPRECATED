@@ -724,17 +724,19 @@ public:
 					isPlayingPLayer = false;
 					cout << "> FORCE STOP ENCODING PROCESS !" << endl;
 
-					stringstream someCmd;// create the command
+                    // create the command
+                    std::ostringstream someCmd;
+//                    std::stringstream someCmd;
+                    
 					someCmd.clear();
 #ifdef TARGET_WIN32
 					someCmd << "taskkill /F /IM ffmpeg.exe";
+                    cout << someCmd;
+                    cout << ofSystem(someCmd.str().c_str()) << endl;
 #endif
 #ifdef TARGET_OSX
-					string cmd = "say Hello";
+					someCmd << "say Hello";
 #endif
-					cout << someCmd << endl;
-					cout << ofSystem(someCmd.str().c_str()) << endl;
-
 					cout << "> DONE !" << endl;
 				}
 
@@ -828,15 +830,33 @@ private:
 
 				cout << "> Starting join all stills (xxxxx.tif) to a video file (.mp4)...";
 
-				stringstream cmd;
-				stringstream cmdEncodingArgs;
-				stringstream ffmpeg;
-				stringstream filesSrc;
-				stringstream pathDest;
-				stringstream nameDest;
-				stringstream fileOut;
-				stringstream pathAppData;
+//                stringstream cmd;
+//                stringstream cmdEncodingArgs;
+//                stringstream ffmpeg;
+//                stringstream filesSrc;
+//                stringstream pathDest;
+//                stringstream nameDest;
+//                stringstream fileOut;
+//                stringstream pathAppData;
+                
+                std::stringstream cmd;
+                std::stringstream cmdEncodingArgs;
+                std::stringstream ffmpeg;
+                std::stringstream filesSrc;
+                std::stringstream pathDest;
+                std::stringstream nameDest;
+                std::stringstream fileOut;
+                std::stringstream pathAppData;
 
+//                std::ostringstream cmd;
+//                std::ostringstream cmdEncodingArgs;
+//                std::ostringstream ffmpeg;
+//                std::ostringstream filesSrc;
+//                std::ostringstream pathDest;
+//                std::ostringstream nameDest;
+//                std::ostringstream fileOut;
+//                std::ostringstream pathAppData;
+                
 				pathAppData << pathRoot;
 
 				ffmpeg << pathAppData.str().c_str() << _nameBinary;
@@ -848,8 +868,14 @@ private:
 				// output video file
 				if (bOverwriteOutVideo) nameDest << "output.mp4"; // "output.mp4";
 				else nameDest << "output_" << ofGetTimestampString() << ".mp4"; // "output_2020-10-11-19-08-01-417.mp4";// timestamped
-				fileOut << pathDest.str().c_str() << nameDest;
+                // macOS error here
+//                fileOut << pathDest.str().c_str() << nameDest;
+                fileOut << pathDest << nameDest;
+//                pathDest = pathDest + nameDest;
+//                fileOut = fileOut + pathDest;
 
+                
+                
 				//-
 
 				// used template to join stills:
@@ -868,7 +894,8 @@ private:
 				if (bFfmpegCustomScript)
 				{
 					// 1. append exe + source files
-					cmd << ffmpeg << " -y -f image2 -i " << filesSrc.str().c_str() << " ";
+                    //// macOS error here
+                    cmd << ffmpeg << " -y -f image2 -i " << filesSrc.str().c_str() << " ";
 
 					// 2. apend script
 					cmd << ffmpegScript.c_str() << " ";
@@ -924,7 +951,8 @@ private:
 					// build the ffmpeg command:
 
 					// 1. prepare source and basic settings: auto overwrite file, fps, size, stills source
-					cmd << ffmpeg << " -y -f image2 -i " << filesSrc.str().c_str() << " ";
+				//// macOS error here
+                    cmd << ffmpeg << " -y -f image2 -i " << filesSrc.str().c_str() << " ";
 					cmd << "-r 60 ";// framerate
 
 					// we can resize too or mantain the original window size
@@ -974,6 +1002,7 @@ private:
 				}
 #endif
 					// append
+                    //// macOS error here
 					cmd << cmdEncodingArgs;
 
 					// 3. append file output
