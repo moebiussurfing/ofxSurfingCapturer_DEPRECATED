@@ -27,24 +27,21 @@
 class CaptureWindow : public ofBaseApp, public ofThread
 {
 
-public:
-	std::stringstream cmd;
-	std::stringstream cmdEncodingArgs;
-	std::stringstream ffmpeg;
-	std::stringstream filesSrc;
-	std::stringstream pathDest;
-	std::stringstream nameDest;
-	std::stringstream fileOut;
-	std::stringstream pathAppData;
-
-	//                std::ostringstream cmd;
-	//                std::ostringstream cmdEncodingArgs;
-	//                std::ostringstream ffmpeg;
-	//                std::ostringstream filesSrc;
-	//                std::ostringstream pathDest;
-	//                std::ostringstream nameDest;
-	//                std::ostringstream fileOut;
-	//                std::ostringstream pathAppData;
+private:
+	std::string filesSrc;
+	std::string fileOut;
+	std::string nameDest;
+	std::string cmd;
+	std::string cmdEncodingArgs;
+	std::string ffmpeg;
+	std::string ffmpegScript;
+	std::string ffmpegNameBinary;
+	std::string pathRoot; // default root path is /bin/data/
+	std::string pathAppData;
+	std::string pathDest;
+	std::string pathFolderCaptures;
+	std::string pathFolderStills;
+	std::string pathFolderSnapshots;
 
 	//--
 
@@ -62,9 +59,6 @@ private:
 	ofImageFormat stillFormat;
 
 private:
-	std::string _pathFolderCaptures;
-	std::string _pathFolderStills;
-	std::string _pathFolderSnapshots;
 
 	ofDirectory dataDirectory;
 	int amountStills = 0;
@@ -89,6 +83,7 @@ public:
 	};
 private:
 	bool bShowMinimal = true;// hide more info when recording to improve performance a little
+	bool bShowMinimal_PRE = false;// hide more info when recording to improve performance a little
 	bool isEncoding = false;
 	bool isPlayingPLayer = false;
 
@@ -96,14 +91,11 @@ private:
 	bool isSectionCustomized = false;
 
 private:
-	std::string pathRoot;
 	ofTrueTypeFont font;
 
 private:
 	bool bFfmpegLocated = false;
 	bool bFfmpegCustomScript = false;
-	std::string ffmpegScript;
-	std::string _nameBinary;
 
 private:
 	//bool bDepth3D = false;// disabled by default. must enable before call setup()
@@ -123,22 +115,21 @@ public:
 		cap_h = 1080;
 
 #ifdef TARGET_WIN32
-		_pathFolderCaptures = "Captures\\";
-		_pathFolderStills = _pathFolderCaptures + "Stills\\";
-		_pathFolderSnapshots = _pathFolderCaptures + "Snapshots\\";
-		// default root path is /bin/data/
+		pathFolderCaptures = "Captures\\";
+		pathFolderStills = pathFolderCaptures + "Stills\\";
+		pathFolderSnapshots = pathFolderCaptures + "Snapshots\\";
 		setPathRoot(ofToDataPath("\\", true));
 #endif
 
 #ifdef TARGET_OSX
-		_pathFolderCaptures = "Captures/";
-		_pathFolderStills = _pathFolderCaptures + "Stills/";
-		_pathFolderSnapshots = _pathFolderCaptures + "Snapshots/";
-		// default root path is /bin/data/
+		pathFolderCaptures = "Captures/";
+		pathFolderStills = pathFolderCaptures + "Stills/";
+		pathFolderSnapshots = pathFolderCaptures + "Snapshots/";
 		setPathRoot(ofToDataPath("/", true));
 #endif
 
-		std::string _font = "assets/fonts/overpass-mono-bold.otf";
+		//std::string _font = "assets/fonts/overpass-mono-bold.otf";
+		std::string _font = "assets/fonts/Hack-Bold.ttf";
 		bool b = font.load(_font, 8);
 		if (!b) font.load(OF_TTF_SERIF, 8);// solve font file not found OF bundled alternative font
 	};
@@ -168,18 +159,18 @@ public:
 			// OF_IMAGE_FORMAT_TIFF = 18,
 			// OF_IMAGE_FORMAT_RAW = 34
 
-			_pathFolderCaptures = path; // "Captures\\"
+			pathFolderCaptures = path; // "Captures\\"
 #ifdef TARGET_WIN32
-			_pathFolderStills = _pathFolderCaptures + "Stills\\";
-			_pathFolderSnapshots = _pathFolderCaptures + "Snapshots\\";
+			pathFolderStills = pathFolderCaptures + "Stills\\";
+			pathFolderSnapshots = pathFolderCaptures + "Snapshots\\";
 #endif
 #ifdef TARGET_OSX
-			_pathFolderStills = _pathFolderCaptures + "Stills/";
-			_pathFolderSnapshots = _pathFolderCaptures + "Snapshots/";
+			pathFolderStills = pathFolderCaptures + "Stills/";
+			pathFolderSnapshots = pathFolderCaptures + "Snapshots/";
 #endif
-			ofxSurfingHelpers2::CheckFolder(_pathFolderCaptures);
-			ofxSurfingHelpers2::CheckFolder(_pathFolderStills);
-			ofxSurfingHelpers2::CheckFolder(_pathFolderSnapshots);
+			ofxSurfingHelpers2::CheckFolder(pathFolderCaptures);
+			ofxSurfingHelpers2::CheckFolder(pathFolderStills);
+			ofxSurfingHelpers2::CheckFolder(pathFolderSnapshots);
 
 			buildHepKeysInfo();
 
@@ -197,21 +188,21 @@ public:
 			ofFile file;
 			std::string _pathFfmpeg;
 #ifdef TARGET_WIN32
-			_nameBinary = "ffmpeg.exe";
+			ffmpegNameBinary = "ffmpeg.exe";
 #endif
 #ifdef TARGET_OSX
-			_nameBinary = "ffmpeg";
+			ffmpegNameBinary = "ffmpeg";
 #endif
-			_pathFfmpeg = pathRoot + _nameBinary;
+			_pathFfmpeg = pathRoot + ffmpegNameBinary;
 			bFfmpegLocated = file.doesFileExist(_pathFfmpeg, true);
-			if (bFfmpegLocated) ofLogWarning(__FUNCTION__) << "Located: " + _nameBinary + " into " << _pathFfmpeg;
-			else ofLogError(__FUNCTION__) << "Missing required binary file " + _nameBinary + " into " << _pathFfmpeg << " !";
+			if (bFfmpegLocated) ofLogWarning(__FUNCTION__) << "Located: " + ffmpegNameBinary + " into " << _pathFfmpeg;
+			else ofLogError(__FUNCTION__) << "Missing required binary file " + ffmpegNameBinary + " into " << _pathFfmpeg << " !";
 
 			// stills folder
 			// let the folder open to list amount files sometimes...
-			dataDirectory.open(ofToDataPath(_pathFolderStills, true));
+			dataDirectory.open(ofToDataPath(pathFolderStills, true));
 			amountStills = dataDirectory.listDir();
-		}
+	}
 
 public:
 	//--------------------------------------------------------------
@@ -260,7 +251,7 @@ public:
 		settings.numThreads = 12;
 		settings.maxMemoryUsage = 9000000000;
 
-		recorder.setPath(_pathFolderStills);
+		recorder.setPath(pathFolderStills);
 		recorder.setup(settings);
 	}
 
@@ -289,6 +280,13 @@ public:
 	void begin() {// call before draw the scene to record
 		if (bActive)
 		{
+			// refresh help info
+			if (bShowMinimal != bShowMinimal_PRE)
+			{
+				bShowMinimal_PRE = bShowMinimal;
+				buildHepKeysInfo();
+			}
+
 			cap_Fbo.begin();
 			ofClear(0, 255);
 			//ofClear(0);
@@ -369,12 +367,19 @@ public:
 			// i don't know how to stop the process without breaking the thread restart...
 			if (bError)
 			{
-				if (ofGetFrameNum() % 120 < 90)
-				{
-					info += "> ALERT! BROKEN FFmpeg THREAD !\n";
-					info += "> MUST RESTART THE APP...\n";
-				}
-				else info += " \n\n";
+				info += "> ALERT! BROKEN FFmpeg THREAD !\n";
+				info += "> MUST RESTART THE APP" + sp + "\n";
+
+				//// blink
+				//if (ofGetFrameNum() % 120 < 90)
+				//{
+				//	info += "> ALERT! BROKEN FFmpeg THREAD !\n";
+				//	info += "> MUST RESTART THE APP...\n";
+				//}
+				//else {
+				//	info += "                               \n";
+				//	info += "                               \n";
+				//}
 			}
 			else
 			{
@@ -400,7 +405,7 @@ public:
 					info += "DURATION : " + calculateTime(getRecordedDuration()) + "\n";
 					//info += infoFFmpeg;
 					info += "F9 : STOP\n";
-					// too much slow
+					// too much slow also when checking every 2 seconds...
 					//info += "Disk Stills " + ofToString(amountStills) + "\n";
 					//if (ofGetFrameNum() % 120 == 0) amountStills = dataDirectory.listDir();// refresh amount stills
 					info += "M  : Minimal Info " + ofToString(bShowMinimal ? "ON" : "OFF") + "\n";
@@ -412,7 +417,6 @@ public:
 					if (!isMounted && !isThreadRunning() && !isRecording)
 					{
 						info += "> PRESS F8 TO MOUNT CAPTURER" + sp + "\n";
-						info += "M  : Minimal Info " + ofToString(bShowMinimal ? "ON" : "OFF") + "\n";
 					}
 
 					// 2. mounted, recording or running ffmpeg script
@@ -430,14 +434,12 @@ public:
 							info += "SECTION         " + ofToString(rectSection.getX(), 0) + "," + ofToString(rectSection.getY(), 0);
 							info += " " + ofToString(rectSection.getWidth(), 0) + "x" + ofToString(rectSection.getHeight(), 0) + "\n";
 						}
-						info += "Disk Stills     " + ofToString(amountStills) + "\n";
-						//info += "\n";
+						info += "Disk Stills     " + ofToString(amountStills) + "\n"; //info += "\n";
 
 						if (isRecording)
 						{
 							info += "F9  : STOP\n";
 							info += "RECORD DURATION: " + calculateTime(getRecordedDuration()) + "\n";
-
 							info += infoFFmpeg;
 
 							// error
@@ -472,15 +474,12 @@ public:
 									info += "> PRESS F11 TO ENCODE VIDEO\n";
 								}
 								else {
-									info += " \n \n";
+									info += "                             \n";
+									info += "                             \n";
 								}
 								info += "> PRESS F8  TO UNMOUNT\n";
 							}
 						}
-						//else
-						//{
-						//	info += "\n\n";
-						//}
 					}
 				}
 
@@ -488,9 +487,7 @@ public:
 
 				if (!bShowMinimal && (!isRecording || !isEncoding))
 				{
-					info += infoHelpKeys;
-					//info += "\n";
-					//info += "M  : Minimal Info " + ofToString(bShowMinimal ? "ON" : "OFF") + "\n";
+					info += infoHelpKeys;//info += "\n";
 				}
 			}
 
@@ -500,42 +497,50 @@ public:
 			float h = ofxSurfingHelpers2::getHeightBBtextBoxed(font, info);
 			y = ofGetHeight() - h - x + 8;// bad offset
 			ofxSurfingHelpers2::drawTextBoxed(font, info, x, y);
+			float ww = ofxSurfingHelpers2::getWidthBBtextBoxed(font, info);
 
 			//-
 
 			// red blink circle
-			if ((!bShowMinimal) && (isMounted || !bError))
+			if (!
+				(bError || (bShowMinimal && isRecording))) // exclude this states
 			{
-				float radius = 15;
-				int yy = y + radius;
-				int xx = x + 2 * radius + 200;
+				if (isMounted || isRecording)
+				{
+					float radius = 10;
+					int yy = y + radius - 10;
+					int xx = x + ww - radius + 10;
 
-				if (!isThreadRunning()) {// only while not encoding video
-					ofPushStyle();
-					ofColor c1{ ofColor(0,128) };
-					ofColor c2{ ofColor(ofColor::red,200) };
-					ofSetLineWidth(1.f);
-					if (isRecording)
+					// only while not encoding video
+					//if (!isThreadRunning())
+					if (!isEncoding)
 					{
-						ofFill();
-						ofSetColor(c2);
-						ofDrawCircle(ofPoint(xx, yy), radius);
-						ofNoFill();
-						ofSetColor(c1);
-						ofDrawCircle(ofPoint(xx, yy), radius);
-					}
-					else if (isMounted)
-					{
-						if (ofGetFrameNum() % 60 < 20) {
+						ofPushStyle();
+						ofColor c1{ ofColor(0,128) };
+						ofColor c2{ ofColor(ofColor::red,200) };
+						ofSetLineWidth(1.f);
+						if (isRecording)
+						{
 							ofFill();
 							ofSetColor(c2);
 							ofDrawCircle(ofPoint(xx, yy), radius);
+							ofNoFill();
+							ofSetColor(c1);
+							ofDrawCircle(ofPoint(xx, yy), radius);
 						}
-						ofNoFill();
-						ofSetColor(c1);
-						ofDrawCircle(ofPoint(xx, yy), radius);
+						else if (isMounted)
+						{
+							if (ofGetFrameNum() % 60 < 20) {
+								ofFill();
+								ofSetColor(c2);
+								ofDrawCircle(ofPoint(xx, yy), radius);
+							}
+							ofNoFill();
+							ofSetColor(c1);
+							ofDrawCircle(ofPoint(xx, yy), radius);
+						}
+						ofPopStyle();
 					}
-					ofPopStyle();
 				}
 			}
 		}
@@ -577,7 +582,7 @@ public:
 public:
 	//--------------------------------------------------------------
 	void doRunFFmpegCommand() {
-		ofLogWarning(__FUNCTION__) << " to: " << _pathFolderStills;
+		ofLogWarning(__FUNCTION__) << " to: " << pathFolderStills;
 
 		isEncoding = true;
 		isPlayingPLayer = false;
@@ -623,8 +628,8 @@ public:
 			const int key = eventArgs.key;
 
 			// modifiers
-			bool mod_COMMAND = eventArgs.hasModifier(OF_KEY_COMMAND);
 			bool mod_CONTROL = eventArgs.hasModifier(OF_KEY_CONTROL);
+			bool mod_COMMAND = eventArgs.hasModifier(OF_KEY_COMMAND);
 			bool mod_ALT = eventArgs.hasModifier(OF_KEY_ALT);
 			bool mod_SHIFT = eventArgs.hasModifier(OF_KEY_SHIFT);
 
@@ -703,7 +708,7 @@ public:
 				{
 					isRecording = true;
 					timeStart = ofGetElapsedTimeMillis();
-					ofLogWarning(__FUNCTION__) << "Start Recording into: " << _pathFolderStills;
+					ofLogWarning(__FUNCTION__) << "Start Recording into: " << pathFolderStills;
 				}
 				else ofLogError(__FUNCTION__) << "Must Mount before Start Capture!";
 			}
@@ -713,7 +718,7 @@ public:
 			case OF_KEY_F10:
 			{
 				std::string _fileName = "snapshot_" + ofGetTimestampString() + ".png";
-				std::string _pathFilename = ofToDataPath(_pathFolderSnapshots + _fileName, true);//bin/data
+				std::string _pathFilename = ofToDataPath(pathFolderSnapshots + _fileName, true);//bin/data
 
 				ofImage img;
 				img.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
@@ -733,7 +738,7 @@ public:
 				}
 				else
 				{
-					ofLogWarning(__FUNCTION__) << "Trying to force skip FFmpeg batch encoding: can't be recording or already encoding";
+					ofLogWarning(__FUNCTION__) << "Trying to force skip FFmpeg batch encoding: Can't be recording or already encoding";
 
 					// TODO: BUG:
 					// when called stop, must restart the app...
@@ -752,7 +757,7 @@ public:
 
 					someCmd.clear();
 #ifdef TARGET_WIN32
-					someCmd << "taskkill /F /IM ffmpeg.exe";
+					someCmd << "taskkill /F /IM ffmpeg.exe";//TODO: force
 					cout << someCmd;
 					cout << ofSystem(someCmd.str().c_str()) << endl;
 #endif
@@ -763,7 +768,7 @@ public:
 				}
 
 				if (amountStills == 0) {
-					ofLogError(__FUNCTION__) << "Missing stills files into " << _pathFolderStills << " !";
+					ofLogError(__FUNCTION__) << "Missing stills files into " << pathFolderStills << " !";
 				}
 			}
 			break;
@@ -773,11 +778,8 @@ public:
 			{
 				if (!mod_COMMAND && !mod_SHIFT && mod_ALT && mod_CONTROL)
 				{
-					//std::string _path = _pathFolderStills;
-					//dataDirectory.open(ofToDataPath(_path, true));
 					dataDirectory.remove(true);
-					ofxSurfingHelpers2::CheckFolder(_pathFolderStills);
-
+					ofxSurfingHelpers2::CheckFolder(pathFolderStills);
 					amountStills = dataDirectory.listDir();
 				}
 			}
@@ -803,6 +805,7 @@ public:
 private:
 	//--------------------------------------------------------------
 	void buildHepKeysInfo() {// must be called after bitrate, framerate and size w/h are setted
+		ofLogNotice(__FUNCTION__);
 
 		// build help info
 		infoHelpKeys = "\n";
@@ -818,12 +821,13 @@ private:
 		}
 		infoHelpKeys += "F10 : Capture Screenshot"; infoHelpKeys += "\n";
 		infoHelpKeys += "F11 : Run FFmpeg video Encoder"; infoHelpKeys += "\n";
-		infoHelpKeys += "M   : Minimal Info\n";
+		//infoHelpKeys += "M   : Minimal Info\n";
 
-		infoHelpKeys += "Ctrl + Alt + BackSpace: Clear Stills";// info += "\n";
+		infoHelpKeys += "Ctrl + Alt + BackSpace: Clear Stills"; infoHelpKeys += "\n";
 		if (!bShowMinimal) {
-			info += "path Stills     : " + _pathFolderStills; info += "\n";
-			info += "path Screenshots: " + _pathFolderSnapshots; info += "\n";
+			infoHelpKeys += "\npath root : \n" + pathRoot; infoHelpKeys += "\n";
+			infoHelpKeys += "path Stills     : " + pathFolderStills; infoHelpKeys += "\n";
+			infoHelpKeys += "path Screenshots: " + pathFolderSnapshots; infoHelpKeys += "\n";
 		}
 		infoFFmpeg = "\n";
 		infoFFmpeg += "Texture copy       : " + ofToString(recorder.getAvgTimeTextureCopy()) + "\n";
@@ -838,13 +842,14 @@ private:
 	//--------------------------------------------------------------
 	void threadedFunction() {
 		if (bActive) {
-			cout << "--------------------------------------------------------------" << endl;
 			ofLogWarning(__FUNCTION__) << endl;
+
+			cout << "--------------------------------------------------------------" << endl;
 			cout << (__FUNCTION__) << endl;
 
 			std::string warninglog = "";
 			warninglog += "> WARNING! ofApp must run as Administrator !\n";
-			warninglog += "> WARNING! ffmpeg binary must be located on: " + pathRoot + _nameBinary + " !\n";
+			warninglog += "> WARNING! ffmpeg binary must be located on: " + pathRoot + ffmpegNameBinary + " !\n";
 
 			cout << endl << warninglog << endl;
 
@@ -854,64 +859,62 @@ private:
 
 				cout << "> Starting join all stills (xxxxx.tif) to a video file (.mp4)...";
 
-				pathAppData << pathRoot;
+				pathAppData = pathRoot;
 
-				ffmpeg << pathAppData.str().c_str() << _nameBinary;
+				ffmpeg = pathAppData + ffmpegNameBinary;
 
 				// input files
-				pathDest << pathAppData.str().c_str() << _pathFolderCaptures;
-				filesSrc << pathAppData.str().c_str() << _pathFolderStills << "%05d.tif"; // data/stills/%05d.tif
+				pathDest = pathAppData + pathFolderCaptures;
+				filesSrc = pathAppData + pathFolderStills + "%05d.tif"; // data/stills/%05d.tif
 
 				// output video file
-				if (bOverwriteOutVideo) nameDest << "output.mp4"; // "output.mp4";
-				else nameDest << "output_" << ofGetTimestampString() << ".mp4"; // "output_2020-10-11-19-08-01-417.mp4";// timestamped
+				if (bOverwriteOutVideo) nameDest = "output.mp4"; // "output.mp4";
+				else nameDest = "output_" + ofGetTimestampString() + ".mp4"; // "output_2020-10-11-19-08-01-417.mp4";// timestamped
 
-				// macOS error here
-				fileOut << pathDest << nameDest;
-				//                fileOut << pathDest.str().c_str() << nameDest;
-				//                pathDest = pathDest + nameDest;
-				//                fileOut = fileOut + pathDest;
+				fileOut = pathDest + nameDest;
 
-								//-
+				//-
 
-								// used template to join stills:
+				// used template to join stills:
 
-								// https://trac.ffmpeg.org/wiki/Encode/H.264
-								// Constant Rate Factor: CRF scale is 0–51, where 0 is lossless, 23 is the default, and 51 is worst quality possible. 
-								// A lower value generally leads to higher quality, and a subjectively sane range is 17–28. 
-								// Consider 17 or 18 to be visually lossless or nearly so; it should look the same or nearly the same as the input but it isn't technically lossless. 
-								// https://bytescout.com/blog/2016/12/ffmpeg-command-lines-convert-various-video-formats.html
+				// https://trac.ffmpeg.org/wiki/Encode/H.264
+				// Constant Rate Factor: CRF scale is 0–51, where 0 is lossless, 23 is the default, and 51 is worst quality possible. 
+				// A lower value generally leads to higher quality, and a subjectively sane range is 17–28. 
+				// Consider 17 or 18 to be visually lossless or nearly so; it should look the same or nearly the same as the input but it isn't technically lossless. 
+				// https://bytescout.com/blog/2016/12/ffmpeg-command-lines-convert-various-video-formats.html
 
-								// Template is selectable by API
+				// Template is selectable by API
 
-								//-
+				//-
 
-								// customized script by user:
+				cmd = "";
+				cmdEncodingArgs = "";
+
+				// customized script by user:
 				if (bFfmpegCustomScript)
 				{
 					// 1. append exe + source files
-					//// macOS error here
-					cmd << ffmpeg << " -y -f image2 -i " << filesSrc.str().c_str() << " ";
+					cmd += ffmpeg + " -y -f image2 -i " + filesSrc + " ";
 
 					// 2. apend script
-					cmd << ffmpegScript.c_str() << " ";
+					cmd += ffmpegScript + " ";
 
 					// 3. append file output
-					cmd << fileOut.str().c_str();
+					cmd += fileOut;
 
 					//-
 
 					cout << endl << endl;
 					cout << "> CUSTOM FFmpeg SCRIPT" << endl << endl;
-					cout << "> " + _nameBinary + " : " << endl << ffmpeg.str().c_str();
+					cout << "> " + ffmpegNameBinary + " : " << endl << ffmpeg;
 					cout << endl << endl;
-					cout << "> Source: " << endl << filesSrc.str().c_str();
+					cout << "> Source: " << endl << filesSrc;
 					cout << endl << endl;
-					cout << "> FFmpeg CustomScript : " << endl << ffmpegScript.c_str();
+					cout << "> FFmpeg CustomScript : " << endl << ffmpegScript;
 					cout << endl << endl;
-					cout << "> Out : " << endl << fileOut.str().c_str();
+					cout << "> Out : " << endl << fileOut;
 					cout << endl << endl;
-					cout << "> Raw Command: " << endl << cmd.str().c_str();
+					cout << "> Raw Command: " << endl << cmd;
 					cout << endl << endl;
 				}
 				else // hardcoded scripts
@@ -947,9 +950,9 @@ private:
 					// build the ffmpeg command:
 
 					// 1. prepare source and basic settings: auto overwrite file, fps, size, stills source
-				//// macOS error here
-					cmd << ffmpeg << " -y -f image2 -i " << filesSrc.str().c_str() << " ";
-					cmd << "-r 60 ";// framerate
+
+					cmd += ffmpeg + " -y -f image2 -i " + filesSrc + " ";
+					cmd += "-r 60 ";// framerate
 
 					// we can resize too or mantain the original window size
 					//cmd << "-s hd1080 ";
@@ -957,22 +960,22 @@ private:
 
 					// 2. append encoding settings
 					// template 1: (CPU)
-					if (!bUseFFmpegGPU) cmdEncodingArgs << "-c:v libx264 -preset veryslow -qp 0 ";
+					if (!bUseFFmpegGPU) cmdEncodingArgs += "-c:v libx264 -preset veryslow -qp 0 ";
 
 #ifdef TARGET_WIN32
 					// template 2: (Nvidia GPU)
 					else if (bUseFFmpegGPU)
 					{
-						cmdEncodingArgs << "-c:v h264_nvenc ";// enables GPU hardware accellerated Nvidia encoding. Could check similar arg to AMD..
-						cmdEncodingArgs << "-b:v 25M "; // constant bitrate 25000
-						cmdEncodingArgs << "-crf 20 ";
-						//cmdEncodingArgs << "-vsync 0 ";
-						//cmdEncodingArgs << "-hwaccel cuvid ";
-						//cmdEncodingArgs << "-qp 0 ";
-						cmdEncodingArgs << "-preset slow ";	// 10secs = 30MB
-						//cmdEncodingArgs << "-preset lossless ";	// 10secs = 150MB
-						//cmdEncodingArgs << "-profile high ";
-						//cmdEncodingArgs << "-pix_fmt yuv444p ";// 10secs = 300MB. doubles size! raw format but too heavy weight!
+						cmdEncodingArgs += "-c:v h264_nvenc ";// enables GPU hardware accellerated Nvidia encoding. Could check similar arg to AMD..
+						cmdEncodingArgs += "-b:v 25M "; // constant bitrate 25000
+						cmdEncodingArgs += "-crf 20 ";
+						//cmdEncodingArgs += "-vsync 0 ";
+						//cmdEncodingArgs += "-hwaccel cuvid ";
+						//cmdEncodingArgs += "-qp 0 ";
+						cmdEncodingArgs += "-preset slow ";	// 10secs = 30MB
+						//cmdEncodingArgs += "-preset lossless ";	// 10secs = 150MB
+						//cmdEncodingArgs += "-profile high ";
+						//cmdEncodingArgs += "-pix_fmt yuv444p ";// 10secs = 300MB. doubles size! raw format but too heavy weight!
 					}
 #endif
 #ifdef TARGET_OSX
@@ -982,41 +985,40 @@ private:
 						// TODO:
 						// must search a script for macOS, because in general they have AMD Radeon GPU, not Nvidia
 						//// CPU
-						//cmdEncodingArgs << "-c:v libx264 -preset veryslow -qp 0 ";
+						//cmdEncodingArgs += "-c:v libx264 -preset veryslow -qp 0 ";
 
 						// GPU Nvidia
-						cmdEncodingArgs << "-c:v h264_nvenc ";// enables GPU hardware accellerated Nvidia encoding. Could check similar arg to AMD..
-						cmdEncodingArgs << "-b:v 25M "; // constant bitrate 25000
-						cmdEncodingArgs << "-crf 20 ";
-						//cmdEncodingArgs << "-vsync 0 ";
-						//cmdEncodingArgs << "-hwaccel cuvid ";
-						//cmdEncodingArgs << "-qp 0 ";
-						cmdEncodingArgs << "-preset slow ";	// 10secs = 30MB
-						//cmdEncodingArgs << "-preset lossless ";	// 10secs = 150MB
-						//cmdEncodingArgs << "-profile high ";
-						//cmdEncodingArgs << "-pix_fmt yuv444p ";// 10secs = 300MB. doubles size! raw format but too heavy weight!
+						cmdEncodingArgs += "-c:v h264_nvenc ";// enables GPU hardware accellerated Nvidia encoding. Could check similar arg to AMD..
+						cmdEncodingArgs += "-b:v 25M "; // constant bitrate 25000
+						cmdEncodingArgs += "-crf 20 ";
+						//cmdEncodingArgs += "-vsync 0 ";
+						//cmdEncodingArgs += "-hwaccel cuvid ";
+						//cmdEncodingArgs += "-qp 0 ";
+						cmdEncodingArgs += "-preset slow ";	// 10secs = 30MB
+						//cmdEncodingArgs += "-preset lossless ";	// 10secs = 150MB
+						//cmdEncodingArgs += "-profile high ";
+						//cmdEncodingArgs += "-pix_fmt yuv444p ";// 10secs = 300MB. doubles size! raw format but too heavy weight!
 					}
 #endif
 					// append
-					//// macOS error here
-					cmd << cmdEncodingArgs;
+					cmd += cmdEncodingArgs;
 
 					// 3. append file output
-					cmd << fileOut.str().c_str();
+					cmd += fileOut;
 
 					//-
 
 					cout << endl << endl;
 					cout << "> HARDCODED FFmpeg SCRIPT" << endl << endl;
-					cout << "> " + _nameBinary + " : " << endl << ffmpeg.str().c_str();
+					cout << "> " + ffmpegNameBinary + " : " << endl << ffmpeg;
 					cout << endl << endl;
-					cout << "> Source : " << endl << filesSrc.str().c_str();
+					cout << "> Source : " << endl << filesSrc;
 					cout << endl << endl;
-					cout << "> Out : " << endl << fileOut.str().c_str();
+					cout << "> Out : " << endl << fileOut;
 					cout << endl << endl;
-					cout << "> Raw Command: " << endl << cmd.str().c_str();
+					cout << "> Raw Command: " << endl << cmd;
 					cout << endl << endl;
-					cout << "> Quality Encoding arguments: " << endl << cmdEncodingArgs.str().c_str();
+					cout << "> Quality Encoding arguments: " << endl << cmdEncodingArgs;
 					cout << endl << endl;
 				}
 
@@ -1025,13 +1027,13 @@ private:
 				// 4. run video encoding
 
 				std::string slog;
-				slog = ofSystem(cmd.str().c_str());
+				slog = ofSystem(cmd);
 				cout << endl << "> Log: " << endl << slog << endl;
 
 				//-
 
 				cout << endl;
-				cout << "> DONE/TRYING VIDEO ENCODING INTO: " << endl << fileOut.str().c_str();
+				cout << "> DONE/TRYING VIDEO ENCODING INTO: " << endl << fileOut;
 				cout << endl << endl;
 				cout << "> WARNING: CLOSE YOUR VIDEOPLAYER TO UNBLOCK ALLOW CLOSE THE APP !";
 				cout << endl << endl;
@@ -1050,7 +1052,7 @@ private:
 				//-
 
 				// 5. open video file with your system player
-				slog = ofSystem(fileOut.str().c_str());
+				slog = ofSystem(fileOut);
 				cout << slog << endl;
 
 				//-
@@ -1085,7 +1087,10 @@ private:
 				isPlayingPLayer = false;
 				cout << "> VIDEOPLAYER CLOSED !" << endl;
 				cout << "> ENCODING PROCESS / THREAD FINISHED !" << endl;
-				bError = true;// workaround. i don't know how to stop the process without breaking the thread restart...
+
+				// TODO:
+				// should check system log to know if failed..
+				//bError = true;// workaround. i don't know how to stop the process without breaking the thread restart...
 			}
 		}
 	}
@@ -1135,4 +1140,4 @@ private:
 		else
 			return (mins + ":" + secs);
 	}
-	};
+};
