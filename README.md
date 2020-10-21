@@ -69,9 +69,17 @@ CaptureWindow capturer;
 ### ofApp.cpp
 ```.cpp
 ofApp::setup(){
-	//capturer.setDephEnabled(false);// disable depth to avoid some fbo problems/bugs
-	//capturer.setCustomizeSection(ofRectangle{ 0, 0, canvasSize.get().x, canvasSize.get().y });// to capture a section only. call before setup
+	// disable depth to avoid some fbo problems/bugs
+	//capturer.setDephEnabled(false);
+
+	// to capture a section only. call before setup
+	//capturer.setCustomizeSection(ofRectangle{ 0, 0, canvasSize.get().x, canvasSize.get().y });
+	
+	//capturer.setup("Captures\\Captures_Projector_1\\", OF_IMAGE_FORMAT_TIFF);
 	capturer.setup();
+
+	// add enabler into your gui
+	//gui.add(capturer.bActive);
 }
 
 ofApp::draw(){
@@ -87,24 +95,25 @@ ofApp::draw(){
 ```
 
 ## Dependencies
-1. **ofxSurfing_CaptureWindowStills**:  
+- To use **ofxSurfing_CaptureWindowStills**:  
+Already included into addon `/libs`. You don't need to add into Project Generator.  
 https://github.com/moebiussurfing/ofxTextureRecorder  
 forked from **arturoc/ofxTextureRecorder**
 
-2. **ofxSurfing_CaptureWindowFFMPEG**:  
+- To use **ofxSurfing_CaptureWindowFFMPEG**:  
 https://github.com/gallagher-tech/ofxFFmpegRecorder.git  
 https://github.com/NickHardeman/ofxFastFboReader.git  
 
 ## Notes
-- Includes some **FFmpeg** scripts, links and a Windows `ffmpeg.exe` binary.
-- Video encoding, batch-join stills (xxxxx.tif) to video (output.mp4) requires `ffmpeg.exe` binary (included).
-- *TODO*: Test on **macOS** and add FFmpeg binary. 
+- Includes some **FFmpeg** scripts, links and a Windows `ffmpeg.exe` and macOS `ffmpeg` binary.
+- Video encoding, batch-join stills (xxxxx.tif) to video (output.mp4) requires `ffmpeg` binary.
 - `ofxSurfing_CaptureWindowStills.h` could work on **macOS** and **Linux** too, bc only relays into `ofxTextureRecorder`.
 - *TODO*: Check if window resize don't breaks Fbo capturer size...
 - FFmpeg encode using `AMD GPU` could work because now you can customize the script on setup.
 
 ## Tested systems
-- **Windows10** / **VS2017** / **OF 0.11**
+- **Windows10** / **VS2017** / **OF +0.11**
+- **macOS High Sierra** / **Xcode 10** / **OF +0.11**
 
 ## Author
 Addon by **@moebiusSurfing**  

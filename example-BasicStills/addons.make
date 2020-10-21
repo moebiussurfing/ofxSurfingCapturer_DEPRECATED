@@ -1,2 +1,1 @@
 ofxSurfingCapturer
-ofxTextureRecorder
