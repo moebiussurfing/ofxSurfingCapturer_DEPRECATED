@@ -37,6 +37,7 @@
 
 class CaptureWindow
 {
+
 public:
 	CaptureWindow() {
 		cap_w = 1920;

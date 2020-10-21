@@ -28,6 +28,27 @@ class CaptureWindow : public ofBaseApp, public ofThread
 {
 
 public:
+	std::stringstream cmd;
+	std::stringstream cmdEncodingArgs;
+	std::stringstream ffmpeg;
+	std::stringstream filesSrc;
+	std::stringstream pathDest;
+	std::stringstream nameDest;
+	std::stringstream fileOut;
+	std::stringstream pathAppData;
+
+	//                std::ostringstream cmd;
+	//                std::ostringstream cmdEncodingArgs;
+	//                std::ostringstream ffmpeg;
+	//                std::ostringstream filesSrc;
+	//                std::ostringstream pathDest;
+	//                std::ostringstream nameDest;
+	//                std::ostringstream fileOut;
+	//                std::ostringstream pathAppData;
+
+	//--
+
+public:
 	ofParameter<bool> bActive{ "Window Capturer", true };// public to integrate into your ofApp gui
 
 private:
@@ -190,7 +211,7 @@ public:
 			// let the folder open to list amount files sometimes...
 			dataDirectory.open(ofToDataPath(_pathFolderStills, true));
 			amountStills = dataDirectory.listDir();
-	}
+		}
 
 public:
 	//--------------------------------------------------------------
@@ -415,7 +436,8 @@ public:
 						if (isRecording)
 						{
 							info += "F9  : STOP\n";
-							info += "RECORD DURATION: " + ofToString(getRecordedDuration(), 1) + "\n";
+							info += "RECORD DURATION: " + calculateTime(getRecordedDuration()) + "\n";
+
 							info += infoFFmpeg;
 
 							// error
@@ -467,8 +489,8 @@ public:
 				if (!bShowMinimal && (!isRecording || !isEncoding))
 				{
 					info += infoHelpKeys;
-					info += "\n";
-					info += "M  : Minimal Info " + ofToString(bShowMinimal ? "ON" : "OFF") + "\n";
+					//info += "\n";
+					//info += "M  : Minimal Info " + ofToString(bShowMinimal ? "ON" : "OFF") + "\n";
 				}
 			}
 
@@ -724,15 +746,15 @@ public:
 					isPlayingPLayer = false;
 					cout << "> FORCE STOP ENCODING PROCESS !" << endl;
 
-                    // create the command
-                    std::ostringstream someCmd;
-//                    std::stringstream someCmd;
-                    
+					// create the command
+					//std::ostringstream someCmd;
+					std::stringstream someCmd;
+
 					someCmd.clear();
 #ifdef TARGET_WIN32
 					someCmd << "taskkill /F /IM ffmpeg.exe";
-                    cout << someCmd;
-                    cout << ofSystem(someCmd.str().c_str()) << endl;
+					cout << someCmd;
+					cout << ofSystem(someCmd.str().c_str()) << endl;
 #endif
 #ifdef TARGET_OSX
 					someCmd << "say Hello";
@@ -796,6 +818,8 @@ private:
 		}
 		infoHelpKeys += "F10 : Capture Screenshot"; infoHelpKeys += "\n";
 		infoHelpKeys += "F11 : Run FFmpeg video Encoder"; infoHelpKeys += "\n";
+		infoHelpKeys += "M   : Minimal Info\n";
+
 		infoHelpKeys += "Ctrl + Alt + BackSpace: Clear Stills";// info += "\n";
 		if (!bShowMinimal) {
 			info += "path Stills     : " + _pathFolderStills; info += "\n";
@@ -830,33 +854,6 @@ private:
 
 				cout << "> Starting join all stills (xxxxx.tif) to a video file (.mp4)...";
 
-//                stringstream cmd;
-//                stringstream cmdEncodingArgs;
-//                stringstream ffmpeg;
-//                stringstream filesSrc;
-//                stringstream pathDest;
-//                stringstream nameDest;
-//                stringstream fileOut;
-//                stringstream pathAppData;
-                
-                std::stringstream cmd;
-                std::stringstream cmdEncodingArgs;
-                std::stringstream ffmpeg;
-                std::stringstream filesSrc;
-                std::stringstream pathDest;
-                std::stringstream nameDest;
-                std::stringstream fileOut;
-                std::stringstream pathAppData;
-
-//                std::ostringstream cmd;
-//                std::ostringstream cmdEncodingArgs;
-//                std::ostringstream ffmpeg;
-//                std::ostringstream filesSrc;
-//                std::ostringstream pathDest;
-//                std::ostringstream nameDest;
-//                std::ostringstream fileOut;
-//                std::ostringstream pathAppData;
-                
 				pathAppData << pathRoot;
 
 				ffmpeg << pathAppData.str().c_str() << _nameBinary;
@@ -868,34 +865,33 @@ private:
 				// output video file
 				if (bOverwriteOutVideo) nameDest << "output.mp4"; // "output.mp4";
 				else nameDest << "output_" << ofGetTimestampString() << ".mp4"; // "output_2020-10-11-19-08-01-417.mp4";// timestamped
-                // macOS error here
-//                fileOut << pathDest.str().c_str() << nameDest;
-                fileOut << pathDest << nameDest;
-//                pathDest = pathDest + nameDest;
-//                fileOut = fileOut + pathDest;
 
-                
-                
-				//-
+				// macOS error here
+				fileOut << pathDest << nameDest;
+				//                fileOut << pathDest.str().c_str() << nameDest;
+				//                pathDest = pathDest + nameDest;
+				//                fileOut = fileOut + pathDest;
 
-				// used template to join stills:
+								//-
 
-				// https://trac.ffmpeg.org/wiki/Encode/H.264
-				// Constant Rate Factor: CRF scale is 0–51, where 0 is lossless, 23 is the default, and 51 is worst quality possible. 
-				// A lower value generally leads to higher quality, and a subjectively sane range is 17–28. 
-				// Consider 17 or 18 to be visually lossless or nearly so; it should look the same or nearly the same as the input but it isn't technically lossless. 
-				// https://bytescout.com/blog/2016/12/ffmpeg-command-lines-convert-various-video-formats.html
+								// used template to join stills:
 
-				// Template is selectable by API
+								// https://trac.ffmpeg.org/wiki/Encode/H.264
+								// Constant Rate Factor: CRF scale is 0–51, where 0 is lossless, 23 is the default, and 51 is worst quality possible. 
+								// A lower value generally leads to higher quality, and a subjectively sane range is 17–28. 
+								// Consider 17 or 18 to be visually lossless or nearly so; it should look the same or nearly the same as the input but it isn't technically lossless. 
+								// https://bytescout.com/blog/2016/12/ffmpeg-command-lines-convert-various-video-formats.html
 
-				//-
+								// Template is selectable by API
 
-				// customized script by user:
+								//-
+
+								// customized script by user:
 				if (bFfmpegCustomScript)
 				{
 					// 1. append exe + source files
-                    //// macOS error here
-                    cmd << ffmpeg << " -y -f image2 -i " << filesSrc.str().c_str() << " ";
+					//// macOS error here
+					cmd << ffmpeg << " -y -f image2 -i " << filesSrc.str().c_str() << " ";
 
 					// 2. apend script
 					cmd << ffmpegScript.c_str() << " ";
@@ -952,7 +948,7 @@ private:
 
 					// 1. prepare source and basic settings: auto overwrite file, fps, size, stills source
 				//// macOS error here
-                    cmd << ffmpeg << " -y -f image2 -i " << filesSrc.str().c_str() << " ";
+					cmd << ffmpeg << " -y -f image2 -i " << filesSrc.str().c_str() << " ";
 					cmd << "-r 60 ";// framerate
 
 					// we can resize too or mantain the original window size
@@ -999,10 +995,10 @@ private:
 						//cmdEncodingArgs << "-preset lossless ";	// 10secs = 150MB
 						//cmdEncodingArgs << "-profile high ";
 						//cmdEncodingArgs << "-pix_fmt yuv444p ";// 10secs = 300MB. doubles size! raw format but too heavy weight!
-				}
+					}
 #endif
 					// append
-                    //// macOS error here
+					//// macOS error here
 					cmd << cmdEncodingArgs;
 
 					// 3. append file output
@@ -1022,7 +1018,7 @@ private:
 					cout << endl << endl;
 					cout << "> Quality Encoding arguments: " << endl << cmdEncodingArgs.str().c_str();
 					cout << endl << endl;
-			}
+				}
 
 				//-
 
@@ -1090,9 +1086,9 @@ private:
 				cout << "> VIDEOPLAYER CLOSED !" << endl;
 				cout << "> ENCODING PROCESS / THREAD FINISHED !" << endl;
 				bError = true;// workaround. i don't know how to stop the process without breaking the thread restart...
+			}
 		}
 	}
-}
 
 	//-
 
@@ -1139,4 +1135,4 @@ private:
 		else
 			return (mins + ":" + secs);
 	}
-};
+	};
