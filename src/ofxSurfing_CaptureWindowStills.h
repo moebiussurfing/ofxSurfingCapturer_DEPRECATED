@@ -286,6 +286,8 @@ public:
 				bShowMinimal_PRE = bShowMinimal;
 				buildHepKeysInfo();
 			}
+			
+			//-
 
 			cap_Fbo.begin();
 			ofClear(0, 255);
@@ -814,7 +816,8 @@ private:
 		infoHelpKeys = "\n";
 		infoHelpKeys += "HELP KEYS"; infoHelpKeys += "\n";
 		infoHelpKeys += "h   : Show Help info"; infoHelpKeys += "\n";
-		infoHelpKeys += "M   : Minimal Info " + ofToString(bShowMinimal ? "ON" : "OFF") + "\n";
+		infoHelpKeys += "M   : Minimal Info ON/OFF\n";
+		//infoHelpKeys += "M   : Minimal Info " + ofToString(bShowMinimal ? "ON" : "OFF") + "\n";
 		infoHelpKeys += "F5  : Set FullHD size"; infoHelpKeys += "\n";
 		infoHelpKeys += "F6  : Set optimal Instagram size"; infoHelpKeys += "\n";
 		infoHelpKeys += "F7  : Refresh Window size"; infoHelpKeys += "\n";
@@ -824,14 +827,17 @@ private:
 		}
 		infoHelpKeys += "F10 : Capture Screenshot"; infoHelpKeys += "\n";
 		infoHelpKeys += "F11 : Run FFmpeg video Encoder"; infoHelpKeys += "\n";
-		//infoHelpKeys += "M   : Minimal Info\n";
-
 		infoHelpKeys += "Ctrl + Alt + BackSpace: Clear Stills"; infoHelpKeys += "\n";
 		if (!bShowMinimal) {
-			infoHelpKeys += "\npath root : \n" + pathRoot; infoHelpKeys += "\n";
+			infoHelpKeys += "\n";
 			infoHelpKeys += "path Stills     : " + pathFolderStills; infoHelpKeys += "\n";
 			infoHelpKeys += "path Screenshots: " + pathFolderSnapshots; infoHelpKeys += "\n";
+			infoHelpKeys += pathRoot + "\n";
+			//infoHelpKeys += "path root : \n" + pathRoot; infoHelpKeys += "\n";
 		}
+
+		//-
+
 		infoFFmpeg = "\n";
 		infoFFmpeg += "Texture copy       : " + ofToString(recorder.getAvgTimeTextureCopy()) + "\n";
 		infoFFmpeg += "GPU download       : " + ofToString(recorder.getAvgTimeGpuDownload()) + "\n";
