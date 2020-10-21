@@ -97,7 +97,7 @@ ofApp::draw(){
 ## Dependencies
 - To use **ofxSurfing_CaptureWindowStills**:  
 https://github.com/moebiussurfing/ofxTextureRecorder  
-forked from **arturoc/ofxTextureRecorder**
+forked from **arturoc/ofxTextureRecorder**.  
 Already included into addon `/libs`. You don't need to add into *Project Generator*.  
 
 - To use **ofxSurfing_CaptureWindowFFMPEG**:  
