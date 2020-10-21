@@ -317,4 +317,49 @@ namespace ofxSurfingHelpers2 {
 		return (font.getStringBoundingBox(text, 0, 0)).getHeight();
 	}
 
+	//---
+
+	// original code copied from: ofxFilikaUtils.h
+#define SECS_PER_MIN 60
+#define SECS_PER_HOUR 3600
+	//--------------------------------------------------------------
+	inline std::string calculateTime(float _time) {
+
+		int seconds;
+		int minutes;
+		int mins_left;
+		int secs_left;
+
+		seconds = (/*gameTimeSeconds - */int(_time));
+		minutes = (/*gameTimeSeconds - */int(_time)) / SECS_PER_MIN;
+		mins_left = minutes % SECS_PER_MIN;
+		secs_left = seconds % SECS_PER_MIN;
+
+		std::string mins;
+		std::string secs;
+
+		if (mins_left < 10) {
+			mins = "0" + ofToString(mins_left);
+		}
+		else {
+			mins = ofToString(mins_left);
+		}
+
+		if (secs_left < 10) {
+			secs = "0" + ofToString(secs_left);
+		}
+		else {
+			secs = ofToString(secs_left);
+		}
+
+		//cout << ofGetElapsedTimeMillis() / 1000 << endl;
+		//cout << "remaining time : " << mins_left << " : " <<  secs_left << endl;
+		//cout << "remaining time : " << mins << " : " <<  secs << endl;
+
+		if (mins_left < 0 || secs_left < 0)
+			return "00:00";
+		else
+			return (mins + ":" + secs);
+	}
+
 };// ofxSurfingHelpers2

@@ -46,7 +46,7 @@ private:
 	//--
 
 public:
-	ofParameter<bool> bActive{ "Window Capturer", true };// public to integrate into your ofApp gui
+	ofParameter<bool> bActive{ "Show Capturer", true };// public to integrate into your ofApp gui
 
 private:
 	ofxTextureRecorder recorder;
@@ -333,7 +333,9 @@ public:
 				ofPushStyle();
 				int _period = 15;
 				bool b = ofGetFrameNum() % _period > _period / 2;
-				ofSetColor(ofColor(ofColor::blue, (b ? 255 : 128)));
+				ofColor c = ofColor::white;
+				//ofColor c = ofColor::blue;
+				ofSetColor(ofColor(c, (b ? 128 : 32)));
 				ofNoFill();
 				ofSetLineWidth(1.0f);
 				ofDrawRectangle(rectSection);
@@ -401,8 +403,8 @@ public:
 				{
 					info += "RECORDING...\n";
 					int _fps = ofGetFrameRate();
-					info += "FPS " + ofToString(_fps) + ((_fps < 59) ? " !" : "") + "\n";
-					info += "DURATION : " + calculateTime(getRecordedDuration()) + "\n";
+					info += "FPS " + ofToString(_fps) + ((_fps < 59) ? " !" : "") + "\n";// with alert
+					info += "DURATION : " + ofxSurfingHelpers2::calculateTime(getRecordedDuration()) + "\n";
 					//info += infoFFmpeg;
 					info += "F9 : STOP\n";
 					// too much slow also when checking every 2 seconds...
@@ -417,6 +419,7 @@ public:
 					if (!isMounted && !isThreadRunning() && !isRecording)
 					{
 						info += "> PRESS F8 TO MOUNT CAPTURER" + sp + "\n";
+						if (bShowMinimal) info += "M : Minimal Info " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
 					}
 
 					// 2. mounted, recording or running ffmpeg script
@@ -439,7 +442,7 @@ public:
 						if (isRecording)
 						{
 							info += "F9  : STOP\n";
-							info += "RECORD DURATION: " + calculateTime(getRecordedDuration()) + "\n";
+							info += "RECORD DURATION: " + ofxSurfingHelpers2::calculateTime(getRecordedDuration()) + "\n";
 							info += infoFFmpeg;
 
 							// error
@@ -1093,51 +1096,5 @@ private:
 				//bError = true;// workaround. i don't know how to stop the process without breaking the thread restart...
 			}
 		}
-	}
-
-	//-
-
-private:
-	// original code copied from: ofxFilikaUtils.h
-#define SECS_PER_MIN 60
-#define SECS_PER_HOUR 3600
-	//--------------------------------------------------------------
-	std::string calculateTime(float _time) {
-
-		int seconds;
-		int minutes;
-		int mins_left;
-		int secs_left;
-
-		seconds = (/*gameTimeSeconds - */int(_time));
-		minutes = (/*gameTimeSeconds - */int(_time)) / SECS_PER_MIN;
-		mins_left = minutes % SECS_PER_MIN;
-		secs_left = seconds % SECS_PER_MIN;
-
-		std::string mins;
-		std::string secs;
-
-		if (mins_left < 10) {
-			mins = "0" + ofToString(mins_left);
-		}
-		else {
-			mins = ofToString(mins_left);
-		}
-
-		if (secs_left < 10) {
-			secs = "0" + ofToString(secs_left);
-		}
-		else {
-			secs = ofToString(secs_left);
-		}
-
-		//cout << ofGetElapsedTimeMillis() / 1000 << endl;
-		//cout << "remaining time : " << mins_left << " : " <<  secs_left << endl;
-		//cout << "remaining time : " << mins << " : " <<  secs << endl;
-
-		if (mins_left < 0 || secs_left < 0)
-			return "00:00";
-		else
-			return (mins + ":" + secs);
 	}
 };
