@@ -166,6 +166,10 @@ public:
 	void setPath(std::string _path) {
 		path = _path;
 	}
+	void resetFrameCounter() {
+		frame = 0;
+	}
+
 	//some helpers to verify settings
 	//bc i don't know how to change on runtime !
 	int getWidth() {

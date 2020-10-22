@@ -26,10 +26,62 @@
 
 class CaptureWindow : public ofBaseApp, public ofThread
 {
+	//--
+
+	// external control
+public:
+	//--------------------------------------------------------------
+	void startCapturer() {
+		// TODO: should prompt to confirm by user or add some security locker flag !
+
+		// 1. remove all captures stills
+		dataDirectory.remove(true);
+		ofxSurfingHelpers2::CheckFolder(pathFolderStills);
+		amountStills = dataDirectory.listDir();
+		ofLogWarning(__FUNCTION__) << "Remove all stills captures";
+
+		// 2. mount
+		isMounted = true;
+		ofLogWarning(__FUNCTION__) << "Mount: " << (isMounted ? "ON" : "OFF");
+
+		// 3. start recording
+		isRecording = true;
+		timeStart = ofGetElapsedTimeMillis();
+		ofLogWarning(__FUNCTION__) << "Start Recording into: " << pathFolderStills;
+	}
+
+	//--------------------------------------------------------------
+	void stopCapturer() {
+		// 1. stop recording
+		if (isRecording)
+		{
+			ofLogWarning(__FUNCTION__) << "Stop Recording";
+
+			isRecording = false;
+			amountStills = dataDirectory.listDir();
+		}
+
+		// 2. start encoding
+		ofLogWarning(__FUNCTION__) << "Start encoding";
+		doRunFFmpegCommand();
+		//isMounted = false;
+	}
+	//--------------------------------------------------------------
+	void resetFrameCounter() {
+		recorder.resetFrameCounter();
+	}
+	//--------------------------------------------------------------
+	void settOutputfilename(std::string name) {
+		fileOutName = name;
+	}
+
+
+	//----
 
 private:
 	std::string filesSrc;
 	std::string fileOut;
+	std::string fileOutName;
 	std::string nameDest;
 	std::string cmd;
 	std::string cmdEncodingArgs;
@@ -75,9 +127,11 @@ private:
 	std::string infoFFmpeg;
 	std::string info;
 public:
+	//--------------------------------------------------------------
 	void setShowMinimal(bool b) {
 		bShowMinimal = b;
 	};
+	//--------------------------------------------------------------
 	void setToggleShowMinimal() {
 		bShowMinimal = !bShowMinimal;
 	};
@@ -178,6 +232,8 @@ public:
 		std::string _font = "assets/fonts/Hack-Bold.ttf";
 		bool b = font.load(_font, 8);
 		if (!b) font.load(OF_TTF_SERIF, 8);// solve font-file-not-found with OF bundled alternative font
+
+		fileOutName = "output";// default filename will be "output.mp4" or with timestamps if enabled
 	};
 
 	//--------------------------------------------------------------
@@ -248,7 +304,7 @@ public:
 			// let the folder open to list amount files sometimes...
 			dataDirectory.open(ofToDataPath(pathFolderStills, true));
 			amountStills = dataDirectory.listDir();
-		}
+	}
 
 public:
 	//--------------------------------------------------------------
@@ -789,8 +845,8 @@ public:
 			// join stills to video after capture
 			case OF_KEY_F11:
 			{
+				//!isThreadRunning()
 				if (!isEncoding && !isRecording && isMounted)
-					//if (!isThreadRunning() && !isRecording && isMounted)
 				{
 					doRunFFmpegCommand();
 				}
@@ -836,6 +892,7 @@ public:
 			{
 				if (!mod_COMMAND && !mod_SHIFT && mod_ALT && mod_CONTROL)
 				{
+					ofLogWarning(__FUNCTION__) << "Remove all stills captures";
 					dataDirectory.remove(true);
 					ofxSurfingHelpers2::CheckFolder(pathFolderStills);
 					amountStills = dataDirectory.listDir();
@@ -917,7 +974,6 @@ private:
 			cout << endl << warninglog << endl;
 
 			if (isEncoding)
-				//if (isThreadRunning())
 			{
 				// build ffmpeg command
 
@@ -932,8 +988,8 @@ private:
 				filesSrc = pathAppData + pathFolderStills + "%05d.tif"; // data/stills/%05d.tif
 
 				// output video file
-				if (bOverwriteOutVideo) nameDest = "output.mp4"; // "output.mp4";
-				else nameDest = "output_" + ofGetTimestampString() + ".mp4"; // "output_2020-10-11-19-08-01-417.mp4";// timestamped
+				if (bOverwriteOutVideo) nameDest = fileOutName + ".mp4"; // "output.mp4";
+				else nameDest = fileOutName + "_" + ofGetTimestampString() + ".mp4"; // "output_2020-10-11-19-08-01-417.mp4";// timestamped
 
 				fileOut = pathDest + nameDest;
 
@@ -1062,7 +1118,7 @@ private:
 						//cmdEncodingArgs += "-preset lossless ";	// 10secs = 150MB
 						//cmdEncodingArgs += "-profile high ";
 						//cmdEncodingArgs += "-pix_fmt yuv444p ";// 10secs = 300MB. doubles size! raw format but too heavy weight!
-				}
+					}
 #endif
 					// append
 					cmd += cmdEncodingArgs;
@@ -1084,7 +1140,7 @@ private:
 					cout << endl << endl;
 					cout << "> Quality Encoding arguments: " << endl << cmdEncodingArgs;
 					cout << endl << endl;
-			}
+				}
 
 				//-
 
@@ -1155,7 +1211,7 @@ private:
 				// TODO:
 				// should check system log to know if failed..
 				//bError = true;// workaround. i don't know how to stop the process without breaking the thread restart...
+			}
 		}
-	}
 	}
 };
