@@ -26,8 +26,11 @@ void ofApp::setup() {
 	
 	// we don't need depth testing for this 2D scene
 	capturer.setDephEnabled(false); 
-
-	capturer.setup(); 
+    
+    capturer.setOutputFilename("Projector_1");
+    capturer.setup("captures/Captures_Projector_1/", OF_IMAGE_FORMAT_TIFF);
+    
+//    capturer.setup();
 	// customizable using arguments: destination, ffmpeg.exe and IMAGE_FORMAT.
 	// default destination is bin/data/Captures. default image format is TIFF.
 
