@@ -109,6 +109,14 @@ private:
 	std::string pathFolderStills;
 	std::string pathFolderSnapshots;
 
+	// platforms
+#ifdef TARGET_OSX
+	std::string _slash_ = "/";
+#endif
+#ifdef TARGET_WIN32
+	std::string _slash_ = "\\";
+#endif
+
 	//----
 
 public:
@@ -125,19 +133,10 @@ public:
 		//you just need to wrap the string for the path like:
 		//std::filesystem::path("some/path") == std::filesystem::path("some//path")
 		//which should return true
-
-#ifdef TARGET_WIN32
-		pathFolderCaptures = "Captures\\";
-		pathFolderStills = pathFolderCaptures + "Stills\\";
-		pathFolderSnapshots = pathFolderCaptures + "Snapshots\\";
-		setPathRoot(ofToDataPath("\\", true));
-#endif
-#ifdef TARGET_OSX
-		pathFolderCaptures = "Captures/";
-		pathFolderStills = pathFolderCaptures + "Stills/";
-		pathFolderSnapshots = pathFolderCaptures + "Snapshots/";
-		setPathRoot(ofToDataPath("/", true));
-#endif
+		pathFolderCaptures = "Captures" + _slash_;
+		pathFolderStills = pathFolderCaptures + "Stills" + _slash_;
+		pathFolderSnapshots = pathFolderCaptures + "Snapshots" + _slash_;
+		setPathRoot(ofToDataPath(_slash_, true));
 
 		//std::string _font = "assets/fonts/overpass-mono-bold.otf";
 		std::string _font = "assets/fonts/Hack-Bold.ttf";
@@ -173,14 +172,9 @@ public:
 			// OF_IMAGE_FORMAT_RAW = 34
 
 			pathFolderCaptures = path; // "Captures\\"
-#ifdef TARGET_WIN32
-			pathFolderStills = pathFolderCaptures + "Stills\\";
-			pathFolderSnapshots = pathFolderCaptures + "Snapshots\\";
-#endif
-#ifdef TARGET_OSX
-			pathFolderStills = pathFolderCaptures + "Stills/";
-			pathFolderSnapshots = pathFolderCaptures + "Snapshots/";
-#endif
+			pathFolderStills = pathFolderCaptures + "Stills" + _slash_;
+			pathFolderSnapshots = pathFolderCaptures + "Snapshots" + _slash_;
+
 			ofxSurfingHelpers2::CheckFolder(pathFolderCaptures);
 			ofxSurfingHelpers2::CheckFolder(pathFolderStills);
 			ofxSurfingHelpers2::CheckFolder(pathFolderSnapshots);
@@ -243,7 +237,7 @@ public:
 
 		// TODO:
 		// BUG:
-		//if (bDepth3D)
+		if (bDepth3D)
 		{
 			blitFbo.allocate(cap_Fbo_Settings);
 			blitFbo.begin();
@@ -301,10 +295,10 @@ public:
 public:
 	//--------------------------------------------------------------
 	void begin() {// call before draw the scene to record
-		if (bActive)
+		//if (bActive)
 		{
 			// refresh help info
-			if (bShowMinimal != bShowMinimal_PRE)
+			if (bActive && bShowMinimal != bShowMinimal_PRE)
 			{
 				bShowMinimal_PRE = bShowMinimal;
 				buildHepKeysInfo();
@@ -320,13 +314,13 @@ public:
 
 	//--------------------------------------------------------------
 	void end() {// call after draw the scene to record
-		if (bActive)
+		//if (bActive)
 		{
 			cap_Fbo.end();
 
 			//-
 
-			if (isMounted)
+			if (bActive && isMounted)
 			{
 				if (isRecording && ofGetFrameNum() > 0)
 				{
@@ -340,40 +334,38 @@ public:
 	void draw() {// must draw the scene content to show
 		if (bActive)
 		{
-			blitFbo.begin();
-			{
-				ofClear(0, 255);
-				//ofClear(0);
-				cap_Fbo.draw(0, 0, cap_w, cap_h);
-			}
-			blitFbo.end();
-			blitFbo.draw(0, 0);
-
-
-			//// TODO:
-			//// BUG: depth/antialias
-			//if (bDepth3D)
+			//blitFbo.begin();
 			//{
-			//	blitFbo.begin();
-			//	{
-			//		ofClear(0, 255);
-			//		//ofClear(0);
-			//		cap_Fbo.draw(0, 0, cap_w, cap_h);
-			//	}
-			//	blitFbo.end();
-			//	blitFbo.draw(0, 0);
-			//}
-			//else
-			//{
+			//	ofClear(0, 255);
+			//	//ofClear(0);
 			//	cap_Fbo.draw(0, 0, cap_w, cap_h);
 			//}
+			//blitFbo.end();
+			//blitFbo.draw(0, 0);
 
-			//--
+
+			// TODO:
+			// BUG: depth/antialias
+			if (bDepth3D)
+			{
+				blitFbo.begin();
+				{
+					ofClear(0, 255);
+					//ofClear(0);
+					cap_Fbo.draw(0, 0, cap_w, cap_h);
+				}
+				blitFbo.end();
+				blitFbo.draw(0, 0);
+			}
+			else
+			{
+				cap_Fbo.draw(0, 0, cap_w, cap_h);
+			}
 		}
-		//else {
-		//	// BUG: depth/antialias
-		//	cap_Fbo.draw(0, 0);// drawing is required outside fbo
-		//}
+		else {
+			// BUG: depth/antialias
+			cap_Fbo.draw(0, 0);// drawing is required outside fbo
+		}
 	}
 
 	//--------------------------------------------------------------
@@ -836,7 +828,7 @@ public:
 				if (amountStills == 0) {
 					ofLogError(__FUNCTION__) << "Missing stills files into " << pathFolderStills << " !";
 				}
-			}
+				}
 			break;
 
 			// remove all captures stills
@@ -852,8 +844,8 @@ public:
 			}
 			break;
 			}
+			}
 		}
-	}
 
 	//--------------------------------------------------------------
 	void windowResized(int w, int h) {// must be called to resize the fbo and video resolution
@@ -1092,7 +1084,7 @@ private:
 					cout << endl << endl;
 					cout << "> Quality Encoding arguments: " << endl << cmdEncodingArgs;
 					cout << endl << endl;
-				}
+					}
 
 				//-
 
@@ -1163,9 +1155,9 @@ private:
 				// TODO:
 				// should check system log to know if failed..
 				//bError = true;// workaround. i don't know how to stop the process without breaking the thread restart...
+				}
 			}
 		}
-	}
 
 	//--
 
@@ -1261,4 +1253,4 @@ public:
 		// re set ofxTextureRecorder
 		recorder.setPath(pathFolderStills);
 	}
-};
+	};
