@@ -6,10 +6,12 @@ void ofApp::setup() {
 	gui.setup();
 
 	// scene
-	ofSetCircleResolution(300);
-	halfx = ofGetWidth() / 2;
-	halfy = ofGetHeight() / 2;
-	pos = glm::vec2(halfx, halfy);
+	{
+		ofSetCircleResolution(300);
+		halfx = ofGetWidth() / 2;
+		halfy = ofGetHeight() / 2;
+		pos = glm::vec2(halfx, halfy);
+	}
 
 	//--
 
@@ -22,7 +24,7 @@ void ofApp::setup() {
 	// This path can be customizable before call setup(), and should looks like:
 	//capturer.setPathRoot("F:\\openFrameworks\\addons\\ofxSurfingCapturer\\example-BasicStills\\bin\\data\\");
 	
-	// we don't need depth testing here
+	// we don't need depth testing for this 2D scene
 	capturer.setDephEnabled(false); 
 
 	capturer.setup(); 
@@ -51,12 +53,14 @@ void ofApp::setup() {
 //--------------------------------------------------------------
 void ofApp::update() {
 	// scene
-	float w = 100;
-	val = (ofGetFrameNum() % 120) / 120.f;// value from 0 to 1 in 2 seconds at 60 fps
-	if ((ofGetFrameNum() % 60) == 0)// randomize position every second
 	{
-		pos = glm::vec2(ofRandom(halfx - w, halfx + w), ofRandom(halfy - w, halfy + w));
-		size = ofRandom(1,10);
+		float w = 100;
+		val = (ofGetFrameNum() % 120) / 120.f;// value from 0 to 1 in 2 seconds at 60 fps
+		if ((ofGetFrameNum() % 60) == 0)// randomize position every second
+		{
+			pos = glm::vec2(ofRandom(halfx - w, halfx + w), ofRandom(halfy - w, halfy + w));
+			size = ofRandom(1, 10);
+		}
 	}
 }
 
@@ -68,20 +72,22 @@ void ofApp::draw() {
 		//-- draw your scene here --//
 
 		// scene
-		ofClear(val * 32, 255);
-		ofPushStyle();
-		float radius = size * ofMap(val, 0, 1, 20, 100);
-		float hue = ofMap(val, 0, 1, 50, 200);
-		float y = ofMap(val, 0, 1, -200, 200);
-		ofFill();
-		ofColor c;
-		c.setBrightness(200);
-		c.setSaturation(128);
-		c.setHue(hue);
-		ofSetColor(c);
-		float x = 200 * ofNoise(val);
-		ofDrawCircle(pos.x + x, pos.y + y, radius);
-		ofPopStyle();
+		{
+			ofClear(val * 32, 255);
+			ofPushStyle();
+			float radius = size * ofMap(val, 0, 1, 20, 100);
+			float hue = ofMap(val, 0, 1, 50, 200);
+			float y = ofMap(val, 0, 1, -200, 200);
+			ofFill();
+			ofColor c;
+			c.setBrightness(200);
+			c.setSaturation(128);
+			c.setHue(hue);
+			ofSetColor(c);
+			float x = 200 * ofNoise(val);
+			ofDrawCircle(pos.x + x, pos.y + y, radius);
+			ofPopStyle();
+		}
 	}
 	capturer.end();
 	capturer.draw();// draw scene

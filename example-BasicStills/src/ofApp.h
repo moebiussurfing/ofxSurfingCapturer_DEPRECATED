@@ -17,7 +17,7 @@ public:
 
 	CaptureWindow capturer;
 
-	//scene
+	// scene
 	glm::vec2 pos;
 	int halfx, halfy;
 	float size;
