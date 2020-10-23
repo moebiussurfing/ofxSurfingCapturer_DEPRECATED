@@ -3,6 +3,7 @@
 //--------------------------------------------------------------
 void ofApp::setup() {
 	ofSetFrameRate(60);
+	gui.setup();
 
 	// scene
 	ofSetCircleResolution(300);
@@ -21,6 +22,9 @@ void ofApp::setup() {
 	// This path can be customizable before call setup(), and should looks like:
 	//capturer.setPathRoot("F:\\openFrameworks\\addons\\ofxSurfingCapturer\\example-BasicStills\\bin\\data\\");
 	
+	// we don't need depth testing here
+	capturer.setDephEnabled(false); 
+
 	capturer.setup(); 
 	// customizable using arguments: destination, ffmpeg.exe and IMAGE_FORMAT.
 	// default destination is bin/data/Captures. default image format is TIFF.
@@ -40,6 +44,8 @@ void ofApp::setup() {
 	//capturer.setOverwriteVideoOut(false); 
 	// true by default. overwirtes output.mp4 file. 
 	// when setted to false will add timestamp to filename.
+
+	gui.add(capturer.bActive);
 }
 
 //--------------------------------------------------------------
@@ -81,6 +87,8 @@ void ofApp::draw() {
 	capturer.draw();// draw scene
 
 	capturer.drawInfo();// gui help
+
+	gui.draw();
 }
 
 //--------------------------------------------------------------

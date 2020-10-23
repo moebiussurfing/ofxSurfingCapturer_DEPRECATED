@@ -26,7 +26,6 @@
 
 class CaptureWindow : public ofBaseApp, public ofThread
 {
-	//--
 
 public:
 	ofParameter<bool> bActive{ "Show Capturer", true };// public to integrate into your ofApp gui
@@ -42,7 +41,6 @@ private:
 	ofImageFormat stillFormat;
 
 private:
-
 	ofDirectory dataDirectory;
 	int amountStills = 0;
 
@@ -57,6 +55,7 @@ private:
 	std::string infoHelpKeys;
 	std::string infoFFmpeg;
 	std::string info;
+
 public:
 	//--------------------------------------------------------------
 	void setShowMinimal(bool b) {
@@ -69,6 +68,7 @@ public:
 private:
 	bool bShowMinimal = true;// hide more info when recording to improve performance a little
 	bool bShowMinimal_PRE = false;// hide more info when recording to improve performance a little
+
 	bool isEncoding = false;
 	bool isPlayingPLayer = false;
 
@@ -241,11 +241,16 @@ public:
 		//ofClear(0);
 		cap_Fbo.end();
 
-		blitFbo.allocate(cap_Fbo_Settings);
-		blitFbo.begin();
-		ofClear(0, 255);
-		//ofClear(0);
-		blitFbo.end();
+		// TODO:
+		// BUG:
+		//if (bDepth3D)
+		{
+			blitFbo.allocate(cap_Fbo_Settings);
+			blitFbo.begin();
+			ofClear(0, 255);
+			//ofClear(0);
+			blitFbo.end();
+		}
 	}
 
 	//--------------------------------------------------------------
@@ -335,7 +340,6 @@ public:
 	void draw() {// must draw the scene content to show
 		if (bActive)
 		{
-			// BUG: depth/antialias
 			blitFbo.begin();
 			{
 				ofClear(0, 255);
@@ -345,23 +349,31 @@ public:
 			blitFbo.end();
 			blitFbo.draw(0, 0);
 
-			// BUG: depth/antialias
-			//cap_Fbo.draw(0, 0);// drawing is required outside fbo
 
-			// blinking preview custom section rect borders
-			if (isSectionCustomized && isMounted && !isRecording) {
-				ofPushStyle();
-				int _period = 15;
-				bool b = ofGetFrameNum() % _period > _period / 2;
-				ofColor c = ofColor::white;
-				//ofColor c = ofColor::blue;
-				ofSetColor(ofColor(c, (b ? 16 : 8)));
-				ofNoFill();
-				ofSetLineWidth(1.0f);
-				ofDrawRectangle(rectSection);
-				ofPopStyle();
-			}
+			//// TODO:
+			//// BUG: depth/antialias
+			//if (bDepth3D)
+			//{
+			//	blitFbo.begin();
+			//	{
+			//		ofClear(0, 255);
+			//		//ofClear(0);
+			//		cap_Fbo.draw(0, 0, cap_w, cap_h);
+			//	}
+			//	blitFbo.end();
+			//	blitFbo.draw(0, 0);
+			//}
+			//else
+			//{
+			//	cap_Fbo.draw(0, 0, cap_w, cap_h);
+			//}
+
+			//--
 		}
+		//else {
+		//	// BUG: depth/antialias
+		//	cap_Fbo.draw(0, 0);// drawing is required outside fbo
+		//}
 	}
 
 	//--------------------------------------------------------------
@@ -566,6 +578,22 @@ public:
 						ofPopStyle();
 					}
 				}
+			}
+
+			//--
+
+			// blinking preview custom section rect borders
+			if (isSectionCustomized && isMounted && !isRecording) {
+				ofPushStyle();
+				int _period = 15;
+				bool b = ofGetFrameNum() % _period > _period / 2;
+				ofColor c = ofColor::white;
+				//ofColor c = ofColor::blue;
+				ofSetColor(ofColor(c, (b ? 16 : 8)));
+				ofNoFill();
+				ofSetLineWidth(1.0f);
+				ofDrawRectangle(rectSection);
+				ofPopStyle();
 			}
 		}
 	}
@@ -1042,7 +1070,7 @@ private:
 						//cmdEncodingArgs += "-preset lossless ";	// 10secs = 150MB
 						//cmdEncodingArgs += "-profile high ";
 						//cmdEncodingArgs += "-pix_fmt yuv444p ";// 10secs = 300MB. doubles size! raw format but too heavy weight!
-				}
+					}
 #endif
 					// append
 					cmd += cmdEncodingArgs;
@@ -1064,7 +1092,7 @@ private:
 					cout << endl << endl;
 					cout << "> Quality Encoding arguments: " << endl << cmdEncodingArgs;
 					cout << endl << endl;
-			}
+				}
 
 				//-
 
@@ -1135,9 +1163,9 @@ private:
 				// TODO:
 				// should check system log to know if failed..
 				//bError = true;// workaround. i don't know how to stop the process without breaking the thread restart...
+			}
 		}
 	}
-}
 
 	//--
 
