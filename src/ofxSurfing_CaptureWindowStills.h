@@ -28,75 +28,6 @@ class CaptureWindow : public ofBaseApp, public ofThread
 {
 	//--
 
-	// external control
-public:
-	//--------------------------------------------------------------
-	void startCapturer() {
-		// TODO: should prompt to confirm by user or add some security locker flag !
-
-		// 1. remove all captures stills
-		dataDirectory.remove(true);
-		ofxSurfingHelpers2::CheckFolder(pathFolderStills);
-		amountStills = dataDirectory.listDir();
-		ofLogWarning(__FUNCTION__) << "Remove all stills captures";
-
-		// 2. mount
-		isMounted = true;
-		ofLogWarning(__FUNCTION__) << "Mount: " << (isMounted ? "ON" : "OFF");
-
-		// 3. start recording
-		isRecording = true;
-		timeStart = ofGetElapsedTimeMillis();
-		ofLogWarning(__FUNCTION__) << "Start Recording into: " << pathFolderStills;
-	}
-
-	//--------------------------------------------------------------
-	void stopCapturer() {
-		// 1. stop recording
-		if (isRecording)
-		{
-			ofLogWarning(__FUNCTION__) << "Stop Recording";
-
-			isRecording = false;
-			amountStills = dataDirectory.listDir();
-		}
-
-		// 2. start encoding
-		ofLogWarning(__FUNCTION__) << "Start encoding";
-		doRunFFmpegCommand();
-		//isMounted = false;
-	}
-	//--------------------------------------------------------------
-	void resetFrameCounter() {
-		recorder.resetFrameCounter();
-	}
-	//--------------------------------------------------------------
-	void settOutputfilename(std::string name) {
-		fileOutName = name;
-	}
-
-
-	//----
-
-private:
-	std::string filesSrc;
-	std::string fileOut;
-	std::string fileOutName;
-	std::string nameDest;
-	std::string cmd;
-	std::string cmdEncodingArgs;
-	std::string ffmpeg;
-	std::string ffmpegScript;
-	std::string ffmpegNameBinary;
-	std::string pathRoot; // default root path is /bin/data/
-	std::string pathAppData;
-	std::string pathDest;
-	std::string pathFolderCaptures;
-	std::string pathFolderStills;
-	std::string pathFolderSnapshots;
-
-	//--
-
 public:
 	ofParameter<bool> bActive{ "Show Capturer", true };// public to integrate into your ofApp gui
 
@@ -161,52 +92,24 @@ private:
 private:
 	bool bOverwriteOutVideo = true;// we only want the last video. we use same name for all re takes and overwrite.
 
-public:
-	// this allows to change the destination folder on runtime
-	// making easier to sort our captures
-	// will create the folder if do not exist
-	//--------------------------------------------------------------
-	void setPathCaptures(std::string path) {
+private:
+	std::string filesSrc;
+	std::string fileOutPath;
+	std::string fileOutName;
+	std::string nameDest;
+	std::string cmd;
+	std::string cmdEncodingArgs;
+	std::string ffmpeg;
+	std::string ffmpegScript;
+	std::string ffmpegNameBinary;
+	std::string pathRoot; // default root path is /bin/data/
+	std::string pathAppData;
+	std::string pathDest;
+	std::string pathFolderCaptures;
+	std::string pathFolderStills;
+	std::string pathFolderSnapshots;
 
-		// workaound to adapt path formats between different platforms projects
-#ifdef TARGET_WIN32
-		ofStringReplace(path, "/", "\\");
-#endif
-#ifdef TARGET_OSX
-		ofStringReplace(path, "\\", "/");
-#endif
-
-#ifdef TARGET_WIN32
-		pathFolderCaptures = path + "\\";
-		pathFolderStills = pathFolderCaptures + "Stills\\";
-		pathFolderSnapshots = pathFolderCaptures + "Snapshots\\";
-#endif
-#ifdef TARGET_OSX
-		pathFolderCaptures = path + "/";
-		pathFolderStills = pathFolderCaptures + "Stills/";
-		pathFolderSnapshots = pathFolderCaptures + "Snapshots/";
-#endif
-
-		ofxSurfingHelpers2::CheckFolder(pathFolderCaptures);
-		ofxSurfingHelpers2::CheckFolder(pathFolderStills);
-		ofxSurfingHelpers2::CheckFolder(pathFolderSnapshots);
-
-		buildHepKeysInfo();
-
-		if (!isSectionCustomized) {
-			cap_w = ofGetWidth();
-			cap_h = ofGetHeight();
-			buildAllocateFbo();
-		}
-
-		// stills folder
-		// let the folder open to list amount files sometimes...
-		dataDirectory.open(ofToDataPath(pathFolderStills, true));
-		amountStills = dataDirectory.listDir();
-
-		// re set ofxTextureRecorder
-		recorder.setPath(pathFolderStills);
-	}
+	//----
 
 public:
 	//--------------------------------------------------------------
@@ -214,6 +117,14 @@ public:
 	{
 		cap_w = 1920;
 		cap_h = 1080;
+
+		// NOTE:
+		//the best way to handle paths to avoid this problems is to use 
+		//std::filesystem::path which when compared doens’t do a strict string comparison 
+		//and will work for / or \ or double // or even comparing absolute and relative paths if they exist. 
+		//you just need to wrap the string for the path like:
+		//std::filesystem::path("some/path") == std::filesystem::path("some//path")
+		//which should return true
 
 #ifdef TARGET_WIN32
 		pathFolderCaptures = "Captures\\";
@@ -525,10 +436,10 @@ public:
 				{
 					// 1. waiting mount: press F8
 					if (!isMounted && !isEncoding && !isRecording)
-						//if (!isMounted && !isThreadRunning() && !isRecording)
 					{
-						info += "> PRESS F8 TO MOUNT CAPTURER" + sp + "\n";
-						if (bShowMinimal) info += "> PRESS M  TO SET MINIMAL INFO " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
+						info += "> PRESS F8  TO MOUNT CAPTURER" + sp + "\n";
+						info += "> PRESS F10 TO TAKE SNAPSHOT\n";
+						if (bShowMinimal) info += "> PRESS M   TO SET MINIMAL INFO " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
 					}
 
 					// 2. mounted, recording or running ffmpeg script
@@ -830,15 +741,28 @@ public:
 			// take screenshot
 			case OF_KEY_F10:
 			{
-				std::string _fileName = "snapshot_" + ofGetTimestampString() + ".png";
+				std::string _fileName = fileOutName + "__" + ofGetTimestampString() + ".png";
+				//std::string _fileName = "snapshot_" + ofGetTimestampString() + ".png";
 				std::string _pathFilename = ofToDataPath(pathFolderSnapshots + _fileName, true);//bin/data
 
 				ofImage img;
-				img.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
-				bool b = img.save(_pathFilename);
+				bool b;
 
-				if (b) ofLogWarning(__FUNCTION__) << " Saved screenshot successfully: " << _pathFilename;
+				if (!isSectionCustomized) {
+					img.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
+				}
+				else {
+					img.grabScreen(0, 0, cap_w, cap_h);
+				}
+				b = img.save(_pathFilename);
+
+				if (b) ofLogWarning(__FUNCTION__) << "Saved screenshot successfully: " << _pathFilename;
 				else ofLogWarning(__FUNCTION__) << " Error saving screenshot:" << _pathFilename;
+
+				// auto open snapshot
+				std::string slog;
+				slog = ofSystem(_pathFilename);
+				cout << slog << endl;
 			}
 			break;
 
@@ -989,9 +913,9 @@ private:
 
 				// output video file
 				if (bOverwriteOutVideo) nameDest = fileOutName + ".mp4"; // "output.mp4";
-				else nameDest = fileOutName + "_" + ofGetTimestampString() + ".mp4"; // "output_2020-10-11-19-08-01-417.mp4";// timestamped
+				else nameDest = fileOutName + "__" + ofGetTimestampString() + ".mp4"; // "output_2020-10-11-19-08-01-417.mp4";// timestamped
 
-				fileOut = pathDest + nameDest;
+				fileOutPath = pathDest + nameDest;
 
 				//-
 
@@ -1020,7 +944,7 @@ private:
 					cmd += ffmpegScript + " ";
 
 					// 3. append file output
-					cmd += fileOut;
+					cmd += fileOutPath;
 
 					//-
 
@@ -1032,7 +956,7 @@ private:
 					cout << endl << endl;
 					cout << "> FFmpeg CustomScript : " << endl << ffmpegScript;
 					cout << endl << endl;
-					cout << "> Out : " << endl << fileOut;
+					cout << "> Out : " << endl << fileOutPath;
 					cout << endl << endl;
 					cout << "> Raw Command: " << endl << cmd;
 					cout << endl << endl;
@@ -1118,13 +1042,13 @@ private:
 						//cmdEncodingArgs += "-preset lossless ";	// 10secs = 150MB
 						//cmdEncodingArgs += "-profile high ";
 						//cmdEncodingArgs += "-pix_fmt yuv444p ";// 10secs = 300MB. doubles size! raw format but too heavy weight!
-					}
+				}
 #endif
 					// append
 					cmd += cmdEncodingArgs;
 
 					// 3. append file output
-					cmd += fileOut;
+					cmd += fileOutPath;
 
 					//-
 
@@ -1134,13 +1058,13 @@ private:
 					cout << endl << endl;
 					cout << "> Source : " << endl << filesSrc;
 					cout << endl << endl;
-					cout << "> Out : " << endl << fileOut;
+					cout << "> Out : " << endl << fileOutPath;
 					cout << endl << endl;
 					cout << "> Raw Command: " << endl << cmd;
 					cout << endl << endl;
 					cout << "> Quality Encoding arguments: " << endl << cmdEncodingArgs;
 					cout << endl << endl;
-				}
+			}
 
 				//-
 
@@ -1153,7 +1077,7 @@ private:
 				//-
 
 				cout << endl;
-				cout << "> DONE/TRYING VIDEO ENCODING INTO: " << endl << fileOut;
+				cout << "> DONE/TRYING VIDEO ENCODING INTO: " << endl << fileOutPath;
 				cout << endl << endl;
 				cout << "> WARNING: CLOSE YOUR VIDEOPLAYER TO UNBLOCK ALLOW CLOSE THE APP !";
 				cout << endl << endl;
@@ -1172,7 +1096,7 @@ private:
 				//-
 
 				// 5. open video file with your system player
-				slog = ofSystem(fileOut);
+				slog = ofSystem(fileOutPath);
 				cout << slog << endl;
 
 				//-
@@ -1211,7 +1135,102 @@ private:
 				// TODO:
 				// should check system log to know if failed..
 				//bError = true;// workaround. i don't know how to stop the process without breaking the thread restart...
-			}
 		}
+	}
+}
+
+	//--
+
+	// external control
+public:
+	//--------------------------------------------------------------
+	void startCapturer() {
+		// TODO: should prompt to confirm by user or add some security locker flag !
+
+		// 1. remove all captures stills
+		dataDirectory.remove(true);
+		ofxSurfingHelpers2::CheckFolder(pathFolderStills);
+		amountStills = dataDirectory.listDir();
+		ofLogWarning(__FUNCTION__) << "Remove all stills captures";
+
+		// 2. mount
+		isMounted = true;
+		ofLogWarning(__FUNCTION__) << "Mount: " << (isMounted ? "ON" : "OFF");
+
+		// 3. start recording
+		isRecording = true;
+		timeStart = ofGetElapsedTimeMillis();
+		ofLogWarning(__FUNCTION__) << "Start Recording into: " << pathFolderStills;
+	}
+
+	//--------------------------------------------------------------
+	void stopCapturer() {
+		// 1. stop recording
+		if (isRecording)
+		{
+			ofLogWarning(__FUNCTION__) << "Stop Recording";
+
+			isRecording = false;
+			amountStills = dataDirectory.listDir();
+		}
+
+		// 2. start encoding
+		ofLogWarning(__FUNCTION__) << "Start encoding";
+		doRunFFmpegCommand();
+		//isMounted = false;
+	}
+	//--------------------------------------------------------------
+	void resetFrameCounter() {
+		recorder.resetFrameCounter();
+	}
+	//--------------------------------------------------------------
+	void setOutputFilename(std::string name) {
+		fileOutName = name;
+	}
+public:
+	// this allows to change the destination folder on runtime
+	// making easier to sort our captures
+	// will create the folder if do not exist
+	//--------------------------------------------------------------
+	void setPathCaptures(std::string path) {
+
+		// workaound to adapt path formats between different platforms projects
+#ifdef TARGET_WIN32
+		ofStringReplace(path, "/", "\\");
+#endif
+#ifdef TARGET_OSX
+		ofStringReplace(path, "\\", "/");
+#endif
+
+#ifdef TARGET_WIN32
+		pathFolderCaptures = path + "\\";
+		pathFolderStills = pathFolderCaptures + "Stills\\";
+		pathFolderSnapshots = pathFolderCaptures + "Snapshots\\";
+#endif
+#ifdef TARGET_OSX
+		pathFolderCaptures = path + "/";
+		pathFolderStills = pathFolderCaptures + "Stills/";
+		pathFolderSnapshots = pathFolderCaptures + "Snapshots/";
+#endif
+
+		ofxSurfingHelpers2::CheckFolder(pathFolderCaptures);
+		ofxSurfingHelpers2::CheckFolder(pathFolderStills);
+		ofxSurfingHelpers2::CheckFolder(pathFolderSnapshots);
+
+		buildHepKeysInfo();
+
+		if (!isSectionCustomized) {
+			cap_w = ofGetWidth();
+			cap_h = ofGetHeight();
+			buildAllocateFbo();
+		}
+
+		// stills folder
+		// let the folder open to list amount files sometimes...
+		dataDirectory.open(ofToDataPath(pathFolderStills, true));
+		amountStills = dataDirectory.listDir();
+
+		// re set ofxTextureRecorder
+		recorder.setPath(pathFolderStills);
 	}
 };
