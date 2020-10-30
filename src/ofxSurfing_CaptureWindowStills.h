@@ -13,6 +13,9 @@
 
 #define ANTIALIAS_NUM_SAMPLES 16
 
+//#define MODE_LESS_THREADS 12	// default example
+#define MODE_LESS_THREADS 4	// TEST: reduce threads to improve performance on my "tiny" Intel i5 6500
+
 #include "ofxTextureRecorder.h"
 #include "ofxSurfingHelpers2.h"
 
@@ -268,7 +271,8 @@ public:
 
 		settings.imageFormat = stillFormat;
 
-		settings.numThreads = 12;
+		settings.numThreads = MODE_LESS_THREADS;
+
 		settings.maxMemoryUsage = 9000000000;
 
 		// NOTE: about my ofxTextureRecorder fork
@@ -797,46 +801,8 @@ public:
 			// join stills to video after capture
 			case OF_KEY_F11:
 			{
-				//!isThreadRunning()
-				if (!isEncoding && !bIsRecording && isMounted)
-				{
-					doRunFFmpegCommand();
-				}
-				else
-				{
-					ofLogWarning(__FUNCTION__) << "Trying to force skip FFmpeg batch encoding: Can't be recording or already encoding";
-
-					// TODO: BUG:
-					// when called stop, must restart the app...
-					if (isThreadRunning() && isEncoding) stopThread();
-
-					// TODO:
-					// force stop the thread
-					//waitForThread(true);
-					isEncoding = false;
-					isPlayingPLayer = false;
-					cout << "> FORCE STOP ENCODING PROCESS !" << endl;
-
-					// create the command
-					//std::ostringstream someCmd;
-					std::stringstream someCmd;
-
-					someCmd.clear();
-#ifdef TARGET_WIN32
-					someCmd << "taskkill /F /IM ffmpeg.exe";//TODO: force
-					cout << someCmd;
-					cout << ofSystem(someCmd.str().c_str()) << endl;
-#endif
-#ifdef TARGET_OSX
-					someCmd << "say Hello";
-#endif
-					cout << "> DONE !" << endl;
-				}
-
-				if (amountStills == 0) {
-					ofLogError(__FUNCTION__) << "Missing stills files into " << pathFolderStills << " !";
-				}
-				}
+				startEncodeVideo();
+			}
 			break;
 
 			// remove all captures stills
@@ -852,8 +818,8 @@ public:
 			}
 			break;
 			}
-			}
 		}
+	}
 
 	//--------------------------------------------------------------
 	void windowResized(int w, int h) {// must be called to resize the fbo and video resolution
@@ -1092,7 +1058,7 @@ private:
 					cout << endl << endl;
 					cout << "> Quality Encoding arguments: " << endl << cmdEncodingArgs;
 					cout << endl << endl;
-					}
+				}
 
 				//-
 
@@ -1207,6 +1173,50 @@ public:
 		doRunFFmpegCommand();
 		//isMounted = false;
 	}
+
+	//--------------------------------------------------------------
+	void startEncodeVideo() {
+		//!isThreadRunning()
+		if (!isEncoding && !bIsRecording && isMounted)
+		{
+			doRunFFmpegCommand();
+		}
+		else
+		{
+			ofLogWarning(__FUNCTION__) << "Trying to force skip FFmpeg batch encoding: Can't be recording or already encoding";
+
+			// TODO: BUG:
+			// when called stop, must restart the app...
+			if (isThreadRunning() && isEncoding) stopThread();
+
+			// TODO:
+			// force stop the thread
+			//waitForThread(true);
+			isEncoding = false;
+			isPlayingPLayer = false;
+			cout << "> FORCE STOP ENCODING PROCESS !" << endl;
+
+			// create the command
+			//std::ostringstream someCmd;
+			std::stringstream someCmd;
+
+			someCmd.clear();
+#ifdef TARGET_WIN32
+			someCmd << "taskkill /F /IM ffmpeg.exe";//TODO: force
+			cout << someCmd;
+			cout << ofSystem(someCmd.str().c_str()) << endl;
+#endif
+#ifdef TARGET_OSX
+			someCmd << "say Hello";
+#endif
+			cout << "> DONE !" << endl;
+		}
+
+		if (amountStills == 0) {
+			ofLogError(__FUNCTION__) << "Missing stills files into " << pathFolderStills << " !";
+		}
+	}
+
 	//--------------------------------------------------------------
 	void resetFrameCounter() {
 		recorder.resetFrameCounter();
