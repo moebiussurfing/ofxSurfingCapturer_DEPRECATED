@@ -2,22 +2,41 @@
 
 #include "ofMain.h"
 
-// TODO: 
+//	TODO: 
 // + check/allow change window capture size without breaking the capturer. not it's posible before call setup()
-// + allow gif exporter
+// + allow gif exporter: https://github.com/pierrep/ofxGifImage
 // + allow instagram ready export
 // + draw rectangle draggable border
 //
+//	NOTES:
 // nice settings handling and binaries: we can copy things from here
 // https://github.com/tyhenry/ofxFFmpeg/blob/master/src/ofxFFmpeg.h
+//
+// Add - vf format = yuv420p(or the alias - pix_fmt yuv420p) as an output option
+// ffmpeg -framerate 30 -i input_%05d.png -vf format=yuv420p output.mp4
+// Otherwise ffmpeg will attempt to preserve as much color information as it can, but most players can only decode YUV 4:2 : 0.
+//
+// troubles with non black encoding:
+// ffmpeg
+//-i "InputVideo2700p.mp4"
+//- vf "scale=w=-2:h=1920:sws_flags=spline+accurate_rnd:in_range=tv:out_range=tv"
+//- c:v libx264
+//- colorspace bt709 - color_trc bt709 - color_primaries bt709 - color_range tv
+//- pix_fmt yuv420p
+//- an - f mp4 "OutputVideo1920p.mp4"
+// https://www.reddit.com/r/ffmpeg/comments/8t54bm/converting_yuvj420p_to_yuv420p_issues_with_black/
 
-#define ANTIALIAS_NUM_SAMPLES 16
-
-//#define MODE_LESS_THREADS 12	// default example
-#define MODE_LESS_THREADS 4	// TEST: reduce threads to improve performance on my "tiny" Intel i5 6500
 
 #include "ofxTextureRecorder.h"
 #include "ofxSurfingHelpers2.h"
+
+#define MODE_DEFAULT_THREADS	// uncomment to allow default cores. recommended. makes ignore below MODE_LESS_THREADS 
+#define MODE_LESS_THREADS 4	// TEST: reduce threads to improve performance on my "tiny" Intel i5 6500
+//#define MODE_LESS_THREADS 12	// default from example
+
+//#define MODE_MORE_MINIMAL // disable some display text
+
+#define ANTIALIAS_NUM_SAMPLES 16 // only used on depth mode
 
 // platforms
 #ifdef TARGET_OSX
@@ -271,7 +290,9 @@ public:
 
 		settings.imageFormat = stillFormat;
 
+#ifndef MODE_DEFAULT_THREADS 
 		settings.numThreads = MODE_LESS_THREADS;
+#endif
 
 		settings.maxMemoryUsage = 9000000000;
 
@@ -440,6 +461,7 @@ public:
 					info += "RECORDING" + sp + "\n";
 					int _fps = ofGetFrameRate();
 					info += "FPS " + ofToString(_fps) + ((_fps < 59) ? " !" : "") + "\n";// alert when fps performance drops..
+#ifdef MODE_MORE_MINIMAL
 					info += "DURATION : " + ofxSurfingHelpers2::calculateTime(getRecordedDuration()) + "\n";
 					//info += infoFFmpeg;
 					info += "F9 : STOP\n";
@@ -447,6 +469,7 @@ public:
 					//info += "Disk Stills " + ofToString(amountStills) + "\n";
 					//if (ofGetFrameNum() % 120 == 0) amountStills = dataDirectory.listDir();// refresh amount stills
 					info += "M  : SET MINIMAL INFO " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
+#endif
 				}
 				else
 				{
@@ -990,7 +1013,8 @@ private:
 					// 1. prepare source and basic settings: auto overwrite file, fps, size, stills source
 
 					cmd += ffmpeg + " -y -f image2 -i " + filesSrc + " ";
-					cmd += "-r 60 ";// framerate
+					cmd += "-framerate 60 ";// framerate
+					//cmd += "-r 60 ";// framerate
 
 					// we can resize too or mantain the original window size
 					//cmd << "-s hd1080 ";
@@ -1014,6 +1038,15 @@ private:
 						//cmdEncodingArgs += "-preset lossless ";	// 10secs = 150MB
 						//cmdEncodingArgs += "-profile high ";
 						//cmdEncodingArgs += "-pix_fmt yuv444p ";// 10secs = 300MB. doubles size! raw format but too heavy weight!
+
+						// https://www.reddit.com/r/ffmpeg/comments/8t54bm/converting_yuvj420p_to_yuv420p_issues_with_black/
+						// TODO: TEST: trying to get real black color (on the video) instead of dark grey...
+						//ffmpeg -framerate 30 -i input_%05d.png -vf format=yuv420p output.mp4
+						//cmdEncodingArgs += "-vf \"scale = w = -2:h = 1920 : sws_flags = spline + accurate_rnd : in_range = tv : out_range = tv\" ";
+						//cmdEncodingArgs += "-colorspace bt709 -color_trc bt709 -color_primaries bt709 -color_range tv ";
+						cmdEncodingArgs += "-vf format=yuv420p ";
+						//cmdEncodingArgs += "-pix_fmt yuv420p ";
+
 					}
 #endif
 #ifdef TARGET_OSX
@@ -1036,7 +1069,7 @@ private:
 						//cmdEncodingArgs += "-preset lossless ";	// 10secs = 150MB
 						//cmdEncodingArgs += "-profile high ";
 						//cmdEncodingArgs += "-pix_fmt yuv444p ";// 10secs = 300MB. doubles size! raw format but too heavy weight!
-					}
+				}
 #endif
 					// append
 					cmd += cmdEncodingArgs;
@@ -1058,7 +1091,7 @@ private:
 					cout << endl << endl;
 					cout << "> Quality Encoding arguments: " << endl << cmdEncodingArgs;
 					cout << endl << endl;
-				}
+			}
 
 				//-
 
@@ -1129,9 +1162,9 @@ private:
 				// TODO:
 				// should check system log to know if failed..
 				//bError = true;// workaround. i don't know how to stop the process without breaking the thread restart...
-				}
-			}
 		}
+	}
+}
 
 	//--
 
@@ -1168,6 +1201,7 @@ public:
 			amountStills = dataDirectory.listDir();
 		}
 
+		// workflow
 		// 2. start encoding
 		ofLogWarning(__FUNCTION__) << "Start encoding";
 		doRunFFmpegCommand();
@@ -1271,4 +1305,4 @@ public:
 		// re set ofxTextureRecorder
 		recorder.setPath(pathFolderStills);
 	}
-	};
+};

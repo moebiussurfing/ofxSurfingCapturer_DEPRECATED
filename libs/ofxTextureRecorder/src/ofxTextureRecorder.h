@@ -27,7 +27,8 @@ public:
 		int w;
 		int h;
 		GLenum textureInternalFormat = GL_RGB;
-		ofImageFormat imageFormat = OF_IMAGE_FORMAT_PNG;
+		ofImageFormat imageFormat = OF_IMAGE_FORMAT_TIFF;
+		//ofImageFormat imageFormat = OF_IMAGE_FORMAT_PNG;
 		string folderPath;
 		/// number encoding threads, default == number of hw cores - 2
 		size_t numThreads = std::max(1u, std::thread::hardware_concurrency() - 2);
