@@ -44,9 +44,17 @@ private:
 	ofDirectory dataDirectory;
 	int amountStills = 0;
 
+public:
+	bool isRecording() {
+		return bIsRecording;
+	}
+	bool isActive() {
+		return bActive.get();
+	}
+
 private:
 	bool isMounted = false;
-	bool isRecording;
+	bool bIsRecording;
 	bool bShowInfo = true;
 	bool bError = false;
 
@@ -322,7 +330,7 @@ public:
 
 			if (bActive && isMounted)
 			{
-				if (isRecording && ofGetFrameNum() > 0)
+				if (bIsRecording && ofGetFrameNum() > 0)
 				{
 					recorder.save(cap_Fbo.getTexture());
 				}
@@ -369,7 +377,7 @@ public:
 	}
 
 	//--------------------------------------------------------------
-	void drawInfo(int x = 30, int y = 0) {// draw the gui info if desired
+	void drawInfo(int x = 30, int yOffest = 0) {// draw the gui info if desired. offset from bottom border
 
 		if (bShowInfo && bActive) {
 
@@ -411,7 +419,7 @@ public:
 			{
 				//--
 
-				if (!bShowMinimal && isRecording) {
+				if (!bShowMinimal && bIsRecording) {
 					if (ofGetFrameNum() % 120 == 0)
 					{
 						infoFFmpeg = "\n";
@@ -423,7 +431,7 @@ public:
 					}
 				}
 
-				if (bShowMinimal && isRecording)// reduced info when recording to imrpove performance a little
+				if (bShowMinimal && bIsRecording)// reduced info when recording to imrpove performance a little
 				{
 					info += "RECORDING" + sp + "\n";
 					int _fps = ofGetFrameRate();
@@ -439,7 +447,7 @@ public:
 				else
 				{
 					// 1. waiting mount: press F8
-					if (!isMounted && !isEncoding && !isRecording)
+					if (!isMounted && !isEncoding && !bIsRecording)
 					{
 						info += "> PRESS F8  TO MOUNT CAPTURER" + sp + "\n";
 						info += "> PRESS F10 TO TAKE SNAPSHOT\n";
@@ -447,7 +455,7 @@ public:
 					}
 
 					// 2. mounted, recording or running ffmpeg script
-					else if ((isMounted || isRecording || isEncoding))
+					else if ((isMounted || bIsRecording || isEncoding))
 					{
 						if (!isEncoding)
 						{
@@ -463,14 +471,14 @@ public:
 						}
 						info += "Disk Stills     " + ofToString(amountStills) + "\n"; //info += "\n";
 
-						if (isRecording)
+						if (bIsRecording)
 						{
 							info += "F9  : STOP\n";
 							info += "RECORD DURATION: " + ofxSurfingHelpers2::calculateTime(getRecordedDuration()) + "\n";
 							info += infoFFmpeg;
 
 							// error
-							if (isRecording) {
+							if (bIsRecording) {
 								if (recorder.getAvgTimeSave() == 0) {
 									std::string ss;
 									const int p = 30;// blink period in frames
@@ -512,7 +520,7 @@ public:
 
 				//-
 
-				if (!bShowMinimal && (!isRecording || !isEncoding))
+				if (!bShowMinimal && (!bIsRecording || !isEncoding))
 				{
 					info += infoHelpKeys;//info += "\n";
 				}
@@ -522,7 +530,7 @@ public:
 
 			// draw text info
 			float h = ofxSurfingHelpers2::getHeightBBtextBoxed(font, info);
-			y = ofGetHeight() - h - x + 8;// bad offset
+			float y = ofGetHeight() - h - x + 8 - yOffest;// bad offset
 			ofxSurfingHelpers2::drawTextBoxed(font, info, x, y);
 			float ww = ofxSurfingHelpers2::getWidthBBtextBoxed(font, info);
 
@@ -530,9 +538,9 @@ public:
 
 			// red blink circle
 			if (!
-				(bError || (bShowMinimal && isRecording))) // exclude this states
+				(bError || (bShowMinimal && bIsRecording))) // exclude this states
 			{
-				if (isMounted || isRecording)
+				if (isMounted || bIsRecording)
 				{
 					float radius = 10;
 					int yy = y + radius - 10;
@@ -547,7 +555,7 @@ public:
 						ofColor c1{ ofColor(0,128) };
 						ofColor c2{ ofColor(ofColor::red,200) };
 						ofSetLineWidth(1.f);
-						if (isRecording)
+						if (bIsRecording)
 						{
 							ofFill();
 							ofSetColor(c2);
@@ -575,7 +583,7 @@ public:
 			//--
 
 			// blinking preview custom section rect borders
-			if (isSectionCustomized && isMounted && !isRecording) {
+			if (isSectionCustomized && isMounted && !bIsRecording) {
 				ofPushStyle();
 				int _period = 15;
 				bool b = ofGetFrameNum() % _period > _period / 2;
@@ -740,17 +748,17 @@ public:
 			// start recording
 			case OF_KEY_F9:
 			{
-				if (isRecording)// do stop
+				if (bIsRecording)// do stop
 				{
 					ofLogWarning(__FUNCTION__) << "Stop Recording";
 
 					//isMounted = false;
-					isRecording = false;
+					bIsRecording = false;
 					amountStills = dataDirectory.listDir();
 				}
 				else if (isMounted)// do start
 				{
-					isRecording = true;
+					bIsRecording = true;
 					timeStart = ofGetElapsedTimeMillis();
 					ofLogWarning(__FUNCTION__) << "Start Recording into: " << pathFolderStills;
 				}
@@ -790,7 +798,7 @@ public:
 			case OF_KEY_F11:
 			{
 				//!isThreadRunning()
-				if (!isEncoding && !isRecording && isMounted)
+				if (!isEncoding && !bIsRecording && isMounted)
 				{
 					doRunFFmpegCommand();
 				}
@@ -1178,7 +1186,7 @@ public:
 		ofLogWarning(__FUNCTION__) << "Mount: " << (isMounted ? "ON" : "OFF");
 
 		// 3. start recording
-		isRecording = true;
+		bIsRecording = true;
 		timeStart = ofGetElapsedTimeMillis();
 		ofLogWarning(__FUNCTION__) << "Start Recording into: " << pathFolderStills;
 	}
@@ -1186,11 +1194,11 @@ public:
 	//--------------------------------------------------------------
 	void stopCapturer() {
 		// 1. stop recording
-		if (isRecording)
+		if (bIsRecording)
 		{
 			ofLogWarning(__FUNCTION__) << "Stop Recording";
 
-			isRecording = false;
+			bIsRecording = false;
 			amountStills = dataDirectory.listDir();
 		}
 
