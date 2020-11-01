@@ -70,12 +70,15 @@ public:
 	bool isRecording() {
 		return bIsRecording;
 	}
+	bool isMounted() {
+		return bIsMounted;
+	}
 	bool isActive() {
 		return bActive.get();
 	}
 
 private:
-	bool isMounted = false;
+	bool bIsMounted = false;
 	bool bIsRecording;
 	bool bShowInfo = true;
 	bool bError = false;
@@ -353,7 +356,7 @@ public:
 
 			//-
 
-			if (bActive && isMounted)
+			if (bActive && bIsMounted)
 			{
 				if (bIsRecording && ofGetFrameNum() > 0)
 				{
@@ -468,21 +471,21 @@ public:
 					// too much slow also when checking every 2 seconds...
 					//info += "Disk Stills " + ofToString(amountStills) + "\n";
 					//if (ofGetFrameNum() % 120 == 0) amountStills = dataDirectory.listDir();// refresh amount stills
-					info += "M  : SET MINIMAL INFO " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
+					info += "Ctrl + m : SET MINIMAL INFO " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
 #endif
 				}
 				else
 				{
 					// 1. waiting mount: press F8
-					if (!isMounted && !isEncoding && !bIsRecording)
+					if (!bIsMounted && !isEncoding && !bIsRecording)
 					{
 						info += "> PRESS F8  TO MOUNT CAPTURER" + sp + "\n";
 						info += "> PRESS F10 TO TAKE SNAPSHOT\n";
-						if (bShowMinimal) info += "> PRESS M   TO SET MINIMAL INFO " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
+						if (bShowMinimal) info += "> PRESS Ctrl + m TO SET MINIMAL INFO " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
 					}
 
 					// 2. mounted, recording or running ffmpeg script
-					else if ((isMounted || bIsRecording || isEncoding))
+					else if ((bIsMounted || bIsRecording || isEncoding))
 					{
 						if (!isEncoding)
 						{
@@ -516,7 +519,7 @@ public:
 								}
 							}
 						}
-						else if (isMounted || isEncoding)// mounted or running ffmpeg script
+						else if (bIsMounted || isEncoding)// mounted or running ffmpeg script
 						{
 							if ((!bFfmpegLocated) && ofGetFrameNum() % 60 < 20) info += "> ALERT! Missing FFmpeg.exe...";
 							info += "\n";
@@ -567,7 +570,7 @@ public:
 			if (!
 				(bError || (bShowMinimal && bIsRecording))) // exclude this states
 			{
-				if (isMounted || bIsRecording)
+				if (bIsMounted || bIsRecording)
 				{
 					float radius = 10;
 					int yy = y + radius - 10;
@@ -591,7 +594,7 @@ public:
 							ofSetColor(c1);
 							ofDrawCircle(ofPoint(xx, yy), radius);
 						}
-						else if (isMounted)
+						else if (bIsMounted)
 						{
 							if (ofGetFrameNum() % 60 < 20) {
 								ofFill();
@@ -610,7 +613,7 @@ public:
 			//--
 
 			// blinking preview custom section rect borders
-			if (isSectionCustomized && isMounted && !bIsRecording) {
+			if (isSectionCustomized && bIsMounted && !bIsRecording) {
 				ofPushStyle();
 				int _period = 15;
 				bool b = ofGetFrameNum() % _period > _period / 2;
@@ -728,9 +731,9 @@ public:
 				break;
 
 				// toggle show minimal
-			case 'M':
+			case 'm':
 			{
-				if (mod_SHIFT && !mod_ALT && mod_CONTROL) {
+				if (!mod_SHIFT && !mod_ALT && mod_CONTROL) {
 					setToggleShowMinimal();
 					ofLogNotice(__FUNCTION__) << "bShowMinimal: " << (bShowMinimal ? "ON" : "OFF");
 				}
@@ -770,8 +773,8 @@ public:
 				// mount prepare record
 			case OF_KEY_F8:
 			{
-				isMounted = !isMounted;
-				ofLogWarning(__FUNCTION__) << "Mount: " << (isMounted ? "ON" : "OFF");
+				bIsMounted = !bIsMounted;
+				ofLogWarning(__FUNCTION__) << "Mount: " << (bIsMounted ? "ON" : "OFF");
 			}
 			break;
 
@@ -786,7 +789,7 @@ public:
 					bIsRecording = false;
 					amountStills = dataDirectory.listDir();
 				}
-				else if (isMounted)// do start
+				else if (bIsMounted)// do start
 				{
 					bIsRecording = true;
 					timeStart = ofGetElapsedTimeMillis();
@@ -880,7 +883,7 @@ private:
 		}
 		infoHelpKeys += "F10 : Capture Screenshot"; infoHelpKeys += "\n";
 		infoHelpKeys += "F11 : Run FFmpeg video Encoder"; infoHelpKeys += "\n";
-		infoHelpKeys += "Ctrl + M : Minimal Info set " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
+		infoHelpKeys += "Ctrl + m : Minimal Info set " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
 		infoHelpKeys += "Ctrl + Alt + BackSpace: Clear Stills"; infoHelpKeys += "\n";
 		if (!bShowMinimal) {
 			infoHelpKeys += "\n";
@@ -1184,8 +1187,8 @@ public:
 		ofLogWarning(__FUNCTION__) << "Remove all stills captures";
 
 		// 2. mount
-		isMounted = true;
-		ofLogWarning(__FUNCTION__) << "Mount: " << (isMounted ? "ON" : "OFF");
+		bIsMounted = true;
+		ofLogWarning(__FUNCTION__) << "Mount: " << (bIsMounted ? "ON" : "OFF");
 
 		// 3. start recording
 		bIsRecording = true;
@@ -1214,7 +1217,7 @@ public:
 	//--------------------------------------------------------------
 	void startEncodeVideo() {
 		//!isThreadRunning()
-		if (!isEncoding && !bIsRecording && isMounted)
+		if (!isEncoding && !bIsRecording && bIsMounted)
 		{
 			doRunFFmpegCommand();
 		}
