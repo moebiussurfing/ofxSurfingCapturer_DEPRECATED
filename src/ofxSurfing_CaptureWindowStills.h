@@ -681,6 +681,7 @@ public:
 	//--------------------------------------------------------------
 	void setToggleActive() {
 		bActive = !bActive;
+		bShowInfo = bActive;
 	}
 
 public:
@@ -722,15 +723,17 @@ public:
 				//	break;
 
 				// toggle show info
-			case 'h':
+			case 'H':
 				setToggleVisibleInfo();
 				break;
 
 				// toggle show minimal
 			case 'M':
 			{
-				setToggleShowMinimal();
-				ofLogNotice(__FUNCTION__) << "bShowMinimal: " << (bShowMinimal ? "ON" : "OFF");
+				if (mod_SHIFT && !mod_ALT && mod_CONTROL) {
+					setToggleShowMinimal();
+					ofLogNotice(__FUNCTION__) << "bShowMinimal: " << (bShowMinimal ? "ON" : "OFF");
+				}
 			}
 			break;
 
@@ -868,7 +871,6 @@ private:
 		infoHelpKeys += "HELP KEYS"; infoHelpKeys += "\n";
 		infoHelpKeys += "h   : Show Help info"; infoHelpKeys += "\n";
 		//infoHelpKeys += "M   : Minimal Info ON/OFF\n";
-		infoHelpKeys += "M   : Minimal Info set " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
 		infoHelpKeys += "F5  : Set FullHD size"; infoHelpKeys += "\n";
 		infoHelpKeys += "F6  : Set optimal Instagram size"; infoHelpKeys += "\n";
 		infoHelpKeys += "F7  : Refresh Window size"; infoHelpKeys += "\n";
@@ -878,6 +880,7 @@ private:
 		}
 		infoHelpKeys += "F10 : Capture Screenshot"; infoHelpKeys += "\n";
 		infoHelpKeys += "F11 : Run FFmpeg video Encoder"; infoHelpKeys += "\n";
+		infoHelpKeys += "Ctrl + M : Minimal Info set " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
 		infoHelpKeys += "Ctrl + Alt + BackSpace: Clear Stills"; infoHelpKeys += "\n";
 		if (!bShowMinimal) {
 			infoHelpKeys += "\n";
