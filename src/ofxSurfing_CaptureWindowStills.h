@@ -50,7 +50,7 @@ class CaptureWindow : public ofBaseApp, public ofThread
 {
 
 public:
-	ofParameter<bool> bActive{ "Show Capturer", true };// public to integrate into your ofApp gui
+	ofParameter<bool> bActive{ "Enable Capturer", true };// public to integrate into your ofApp gui
 
 private:
 	ofxTextureRecorder recorder;
@@ -72,6 +72,9 @@ public:
 	}
 	bool isMounted() {
 		return bIsMounted;
+	}
+	void setMounted(bool b) {
+		bIsMounted = b;
 	}
 	bool isActive() {
 		return bActive.get();
@@ -261,6 +264,8 @@ public:
 			//cap_Fbo_Settings.depthStencilAsTexture = true;
 			//cap_Fbo_Settings.maxFilter
 		}
+		// TODO:
+		cap_Fbo_Settings.numSamples = (int)ANTIALIAS_NUM_SAMPLES;// antialias 
 
 		cap_Fbo.allocate(cap_Fbo_Settings);
 		cap_Fbo.begin();
