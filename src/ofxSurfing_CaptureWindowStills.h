@@ -50,7 +50,27 @@ class CaptureWindow : public ofBaseApp, public ofThread
 {
 
 public:
-	ofParameter<bool> bActive{ "Enable Capturer", true };// public to integrate into your ofApp gui
+	// public to integrate into your ofApp gui
+	ofParameterGroup params{ "Capturer" };
+	ofParameter<bool> bActive{ "Enable", true };
+	ofParameter<bool> bShowInfo{ "Show", true };
+	ofParameter<bool> bShowMinimal{ "Minimal", true };
+	ofParameter<bool> bRefresh{ "Refresh", false};
+
+	void Changed_params(ofAbstractParameter &e) {
+		std::string name = e.getName();
+		ofLogNotice(__FUNCTION__) << name << " : " << e;
+
+		if (name == bShowMinimal.getName())
+		{
+
+		}
+		if (name == bRefresh.getName() && bRefresh)
+		{
+			bRefresh = false;
+			buildAllocateFbo();
+		}
+	}
 
 private:
 	ofxTextureRecorder recorder;
@@ -79,11 +99,17 @@ public:
 	bool isActive() {
 		return bActive.get();
 	}
+	//bool isVisible() {
+	//	return bShowInfo.get();
+	//}
+	//void setVisible(bool b) {
+	//	bShowInfo = b;
+	//}
 
 private:
 	bool bIsMounted = false;
 	bool bIsRecording;
-	bool bShowInfo = true;
+	//bool bShowInfo = true;
 	bool bError = false;
 
 private:
@@ -102,7 +128,7 @@ public:
 		bShowMinimal = !bShowMinimal;
 	};
 private:
-	bool bShowMinimal = true;// hide more info when recording to improve performance a little
+	//bool bShowMinimal = true;// hide more info when recording to improve performance a little
 	bool bShowMinimal_PRE = false;// hide more info when recording to improve performance a little
 
 	bool isEncoding = false;
@@ -153,6 +179,14 @@ private:
 	std::string _slash_ = "\\";
 #endif
 
+	// TODO:
+	int _fpsTar;
+	int _fps;
+	int _fpsThsh;
+	int _fpsDiff;
+	bool _bAlert;
+	int lostFrames;
+
 	//----
 
 public:
@@ -180,12 +214,27 @@ public:
 		if (!b) font.load(OF_TTF_SERIF, 8);// solve font-file-not-found with OF bundled alternative font
 
 		fileOutName = "output";// default filename will be "output.mp4" or with timestamps if enabled
+
+		params.add(bShowInfo);
+		params.add(bActive);
+		params.add(bShowMinimal);
+		params.add(bRefresh);
+
+		ofAddListener(params.parameterChangedE(), this, &CaptureWindow::Changed_params);
+
+		// TODO:
+		_fpsTar = 60;
+		_fps = (int)ofGetFrameRate();
+		_fpsThsh = 2;
+		lostFrames = 0;
 	};
 
 	//--------------------------------------------------------------
 	~CaptureWindow() {
 		// stop the thread on exit
 		waitForThread(true);
+
+		ofRemoveListener(params.parameterChangedE(), this, &CaptureWindow::Changed_params);
 	};
 
 public:
@@ -412,7 +461,23 @@ public:
 	//--------------------------------------------------------------
 	void drawInfo(int x = 30, int yOffest = 0) {// draw the gui info if desired. offset from bottom border
 
-		if (bShowInfo && bActive) {
+		// TODO:
+		if (isRecording()) 
+		{
+			_fps = (int)ofGetFrameRate();
+			_fpsThsh = 3;
+			_fpsDiff = _fpsTar - _fps;
+			_bAlert = (_fpsDiff > _fpsThsh);
+			if (_bAlert) {
+				lostFrames += _fpsDiff;
+			}
+		}
+
+		//-
+
+		if (bShowInfo)
+		//if (bShowInfo && bActive)
+		{
 
 			info = "";
 
@@ -467,8 +532,9 @@ public:
 				if (bShowMinimal && bIsRecording)// reduced info when recording to imrpove performance a little
 				{
 					info += "RECORDING" + sp + "\n";
-					int _fps = ofGetFrameRate();
-					info += "FPS " + ofToString(_fps) + ((_fps < 59) ? " !" : "") + "\n";// alert when fps performance drops..
+					info += "FPS " + ofToString(_fps) + (_bAlert ? " !" : "  ") + "\n";// alert when fps performance drops..
+					info += "Lost Frames " + ofToString(lostFrames) + "\n";
+
 #ifdef MODE_MORE_MINIMAL
 					info += "DURATION : " + ofxSurfingHelpers2::calculateTime(getRecordedDuration()) + "\n";
 					//info += infoFFmpeg;
@@ -495,6 +561,7 @@ public:
 						if (!isEncoding)
 						{
 							info += "FPS " + ofToString(ofGetFrameRate(), 0) + "          " + ofToString(recorder.getFrame()) + " frames\n";
+							info += "Lost Frames     " + ofToString(lostFrames) + "\n";
 							info += "WINDOW          " + ofToString(ofGetWidth()) + "x" + ofToString(ofGetHeight()) + "\n";
 							info += "RECORDER        " + ofToString(recorder.getWidth()) + "x" + ofToString(recorder.getHeight()) + "\n";
 							info += "FBO SIZE        " + ofToString(cap_w) + "x" + ofToString(cap_h) + "\n";
@@ -579,7 +646,8 @@ public:
 				{
 					float radius = 10;
 					int yy = y + radius - 10;
-					int xx = x + ww - radius + 10;
+					int xx = x + ww - radius + 25;
+					//int xx = x + ww - radius + 10;
 					if (bShowMinimal) xx += 5;
 
 					// only while not encoding video
@@ -683,13 +751,13 @@ public:
 	//--------------------------------------------------------------
 	void setActive(bool b) {
 		bActive = b;
-		bShowInfo = bActive;
+		//bShowInfo = bActive;
 	}
 
 	//--------------------------------------------------------------
 	void setToggleActive() {
 		bActive = !bActive;
-		bShowInfo = bActive;
+		//bShowInfo = bActive;
 	}
 
 public:
@@ -799,6 +867,7 @@ public:
 					bIsRecording = true;
 					timeStart = ofGetElapsedTimeMillis();
 					ofLogWarning(__FUNCTION__) << "Start Recording into: " << pathFolderStills;
+					lostFrames = 0;
 				}
 				else ofLogError(__FUNCTION__) << "Must Mount before Start Capture!";
 			}
@@ -1199,6 +1268,8 @@ public:
 		bIsRecording = true;
 		timeStart = ofGetElapsedTimeMillis();
 		ofLogWarning(__FUNCTION__) << "Start Recording into: " << pathFolderStills;
+
+		lostFrames = 0;
 	}
 
 	//--------------------------------------------------------------
