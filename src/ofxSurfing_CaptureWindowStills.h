@@ -920,7 +920,7 @@ private:
 			cout << (__FUNCTION__) << endl;
 
 			std::string warninglog = "";
-			warninglog += "> WARNING! ofApp must run as Administrator !\n";
+			warninglog += "> WARNING! Sometimes ofApp must run as Administrator !\n";
 			warninglog += "> WARNING! ffmpeg binary must be located on: " + pathRoot + ffmpegNameBinary + " !\n";
 
 			cout << endl << warninglog << endl;
@@ -1080,7 +1080,7 @@ private:
 						//cmdEncodingArgs += "-preset lossless ";	// 10secs = 150MB
 						//cmdEncodingArgs += "-profile high ";
 						//cmdEncodingArgs += "-pix_fmt yuv444p ";// 10secs = 300MB. doubles size! raw format but too heavy weight!
-				}
+					}
 #endif
 					// append
 					cmd += cmdEncodingArgs;
@@ -1102,7 +1102,7 @@ private:
 					cout << endl << endl;
 					cout << "> Quality Encoding arguments: " << endl << cmdEncodingArgs;
 					cout << endl << endl;
-			}
+				}
 
 				//-
 
@@ -1173,9 +1173,9 @@ private:
 				// TODO:
 				// should check system log to know if failed..
 				//bError = true;// workaround. i don't know how to stop the process without breaking the thread restart...
+			}
 		}
 	}
-}
 
 	//--
 
