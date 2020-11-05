@@ -52,8 +52,8 @@ class CaptureWindow : public ofBaseApp, public ofThread
 public:
 	// public to integrate into your ofApp gui
 	ofParameterGroup params{ "Capturer" };
-	ofParameter<bool> bActive{ "Enable", true };
-	ofParameter<bool> bShowInfo{ "Show", true };
+	ofParameter<bool> bActive{ "Enable", false };
+	ofParameter<bool> bShowInfo{ "Show", false };
 	ofParameter<bool> bShowMinimal{ "Minimal", true };
 	ofParameter<bool> bRefresh{ "Refresh", false};
 
