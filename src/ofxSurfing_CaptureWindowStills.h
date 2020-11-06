@@ -856,18 +856,22 @@ public:
 			{
 				if (bIsRecording)// do stop
 				{
-					ofLogWarning(__FUNCTION__) << "Stop Recording";
+					//ofLogWarning(__FUNCTION__) << "Stop Recording";
 
-					//isMounted = false;
-					bIsRecording = false;
-					amountStills = dataDirectory.listDir();
+					////isMounted = false;
+					//bIsRecording = false;
+					//amountStills = dataDirectory.listDir();
+
+					stopCapturer();
 				}
 				else if (bIsMounted)// do start
 				{
-					bIsRecording = true;
-					timeStart = ofGetElapsedTimeMillis();
-					ofLogWarning(__FUNCTION__) << "Start Recording into: " << pathFolderStills;
-					lostFrames = 0;
+					//bIsRecording = true;
+					//timeStart = ofGetElapsedTimeMillis();
+					//ofLogWarning(__FUNCTION__) << "Start Recording into: " << pathFolderStills;
+					//lostFrames = 0;
+
+					startCapturer();
 				}
 				else ofLogError(__FUNCTION__) << "Must Mount before Start Capture!";
 			}
@@ -1259,6 +1263,7 @@ public:
 		ofxSurfingHelpers2::CheckFolder(pathFolderStills);
 		amountStills = dataDirectory.listDir();
 		ofLogWarning(__FUNCTION__) << "Remove all stills captures";
+		resetFrameCounter();
 
 		// 2. mount
 		bIsMounted = true;
@@ -1283,11 +1288,11 @@ public:
 			amountStills = dataDirectory.listDir();
 		}
 
-		// workflow
-		// 2. start encoding
-		ofLogWarning(__FUNCTION__) << "Start encoding";
-		doRunFFmpegCommand();
-		//isMounted = false;
+		//// workflow
+		//// 2. start encoding
+		//ofLogWarning(__FUNCTION__) << "Start encoding";
+		//doRunFFmpegCommand();
+		////isMounted = false;
 	}
 
 	//--------------------------------------------------------------
