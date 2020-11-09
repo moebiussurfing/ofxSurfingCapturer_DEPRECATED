@@ -145,8 +145,8 @@ private:
 	bool bFfmpegCustomScript = false;
 
 private:
-	//bool bDepth3D = false;// disabled by default. must enable before call setup()
-	bool bDepth3D = true;// enabled by default. must disable before call setup()
+	bool bDepth3D = false;// disabled by default. must enable before call setup()
+	//bool bDepth3D = true;// enabled by default. must disable before call setup()
 
 	// BUG solved: when using antialias/depth we get "black screen"
 	ofFbo blitFbo;// so we need this aux fbo to solve the bug
@@ -313,8 +313,8 @@ public:
 			//cap_Fbo_Settings.depthStencilAsTexture = true;
 			//cap_Fbo_Settings.maxFilter
 		}
-		// TODO:
-		cap_Fbo_Settings.numSamples = (int)ANTIALIAS_NUM_SAMPLES;// antialias 
+		//// TODO:
+		//cap_Fbo_Settings.numSamples = (int)ANTIALIAS_NUM_SAMPLES;// antialias 
 
 		cap_Fbo.allocate(cap_Fbo_Settings);
 		cap_Fbo.begin();
@@ -350,8 +350,8 @@ public:
 #ifndef MODE_DEFAULT_THREADS 
 		settings.numThreads = MODE_LESS_THREADS;
 #endif
-
-		settings.maxMemoryUsage = 9000000000;
+		// TODO:
+		//settings.maxMemoryUsage = 9000000000;
 
 		// NOTE: about my ofxTextureRecorder fork
 		// this setPath is not required on my customized fork of ofxTextureRecorder
