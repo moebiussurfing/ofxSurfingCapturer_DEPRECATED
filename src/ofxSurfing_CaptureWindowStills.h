@@ -1275,6 +1275,10 @@ public:
 		ofLogWarning(__FUNCTION__) << "Start Recording into: " << pathFolderStills;
 
 		lostFrames = 0;
+
+		ofxSurfingHelpers2::CheckFolder(pathFolderCaptures);
+		ofxSurfingHelpers2::CheckFolder(pathFolderStills);
+		//ofxSurfingHelpers2::CheckFolder(pathFolderSnapshots);
 	}
 
 	//--------------------------------------------------------------
