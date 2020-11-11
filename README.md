@@ -4,20 +4,15 @@ ofxSurfingCapturer
 # Overview
 **ofxSurfingCapturer** is an **openFrameworks** addon to do *fast video capturing* but storing **still frames** to join to video with *FFmpeg*. It helps on all the capture workflow. 
 
-# Two alternatives
-Includes **two** different **independent** classes:  
+Includes the main class:  
 
-1. **ofxSurfing_CaptureWindowStills.h**  
-It's much faster because captures still frames (.tif) using threading + FFmpeg video (.mp4) encoding.  
+**ofxSurfing_CaptureWindowStills.h**  
+It's much faster (in some machines) because captures still frames (.tif) using threading + FFmpeg video (.mp4) encoding using system command-line.  
 Based on: **ofxTextureRecorder**.  
-
-2. **ofxSurfing_CaptureWindowFFMPEG.h**  
-Alternative OneStep option: Live Encodes to video, so it's slower in some machines.  
-Based on: **ofxFFmpegRecorder** and **ofxFastFboReader**.
 
 ## Screenshots
 
-### 1. example-BasicStills:
+### example-BasicStills:
 Uses ofxSurfing_CaptureWindowStills.h  
 
 ### HOW TO / WORKFLOW 
@@ -47,7 +42,7 @@ Uses ofxSurfing_CaptureWindowFFMPEG.h
 (with realtime capture and FFmpeg video encoding)  
 
 ## Features
-- **Faster** than other video alternatives (bc "raw" still frames + encode).
+- **Faster** than other live-capture-to-video alternatives (bc "raw" still frames + encode).
 - **GPU Hardware accelerated** (or CPU) video encoding. (Nvidia only yet) 
 - Selectable image format: *png*, *jpg*, ...etc. *tif* by default.  
 - **Key commands** to handle all the workflow:  
@@ -69,7 +64,7 @@ CaptureWindow capturer;
 ### ofApp.cpp
 ```.cpp
 ofApp::setup(){
-	// disable depth to avoid some fbo problems/bugs
+	// disable depth to avoid some fbo problems/bugs when using 2D scenes.
 	//capturer.setDephEnabled(false);
 
 	// to capture a section only. call before setup
@@ -79,7 +74,7 @@ ofApp::setup(){
 	capturer.setup();
 
 	// add enabler into your gui
-	//gui.add(capturer.bActive);
+	//gui.add(capturer.params);
 }
 
 ofApp::draw(){
@@ -100,10 +95,6 @@ https://github.com/moebiussurfing/ofxTextureRecorder
 forked from **arturoc/ofxTextureRecorder**.  
 Already included into addon `/libs`. You don't need to add into *Project Generator*.  
 
-- To use **ofxSurfing_CaptureWindowFFMPEG**:  
-https://github.com/gallagher-tech/ofxFFmpegRecorder.git  
-https://github.com/NickHardeman/ofxFastFboReader.git  
-
 ## Notes
 - Includes some **FFmpeg** scripts, links and a Windows `ffmpeg.exe` and macOS `ffmpeg` binary.
 - Video encoding, batch-join stills (xxxxx.tif) to video (output.mp4) requires `ffmpeg` binary.
@@ -120,7 +111,7 @@ Addon by **@moebiusSurfing**
 *(ManuMolina). 2020.*  
 
 Thanks to the coders of the above original addons:  
-**NickHardeman** and **arturoc**.  
+**arturoc**.  
 
 ## License
 *MIT License.*
