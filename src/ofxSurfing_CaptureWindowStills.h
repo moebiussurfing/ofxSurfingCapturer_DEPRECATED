@@ -53,22 +53,23 @@ class CaptureWindow : public ofBaseApp, public ofThread
 public:
 	// public to integrate into your ofApp gui
 	ofParameterGroup params{ "Capturer" };
-	ofParameterGroup params_extra{ "Extra" };
 	ofParameter<bool> bActive{ "Enable", false };
 	ofParameter<bool> bRecord{ "Record", false };
 private:
+	ofParameterGroup params_extra{ "Extra" };
 	ofParameter<bool> bShowInfo{ "Show info", false };
 	ofParameter<bool> bShowMinimal{ "Minimal", true };
 	ofParameter<bool> bRefresh{ "Refresh Section", false };
 	ofParameter<bool> bAutoencode{ "Autoencode", false };
 	ofParameter<std::string> timer_str{ "Time","00:00" };
+
 	std::string path_Settings = "WindowCapturer.xml";
 
 	bool bDisableCallbacks = false;
 
 	//--------------------------------------------------------------
 	void Changed_params(ofAbstractParameter &e) {
-		if (bDisableCallbacks) 
+		if (!bDisableCallbacks) 
 		{
 			std::string name = e.getName();
 			if (name != timer_str.getName())
@@ -281,6 +282,7 @@ public:
 
 		timer_str.setSerializable(false);
 		bRefresh.setSerializable(false);
+		bRecord.setSerializable(false);
 
 		ofAddListener(params.parameterChangedE(), this, &CaptureWindow::Changed_params);
 
@@ -1318,7 +1320,6 @@ private:
 					
 					cmd += "-y -f image2 ";
 					cmd += "-r 60 ";
-					//cmd += "-framerate 60 ";// framerate
 					cmd += "-i " + filesSrc + " ";
 
 					// we can resize too or mantain the original window size
@@ -1343,11 +1344,11 @@ private:
 						cmdEncodingArgs += "-c:v h264_nvenc ";// enables GPU hardware accellerated Nvidia encoding. Could check similar arg to AMD..
 						cmdEncodingArgs += "-b:v 25M "; // constant bitrate 25000
 						//mdEncodingArgs += "-framerate 60 ";// BUG: not applying 60 fps ??
-						//cmdEncodingArgs += "-crf 20 ";
+						cmdEncodingArgs += "-crf 20 ";
 						//cmdEncodingArgs += "-vsync 0 ";
 						//cmdEncodingArgs += "-hwaccel cuvid ";
 						//cmdEncodingArgs += "-qp 0 ";
-						//cmdEncodingArgs += "-preset slow ";	// 10secs = 30MB
+						cmdEncodingArgs += "-preset slow ";	// 10secs = 30MB
 						//cmdEncodingArgs += "-preset lossless ";	// 10secs = 150MB
 						//cmdEncodingArgs += "-profile high ";
 						//cmdEncodingArgs += "-pix_fmt yuv444p ";// 10secs = 300MB. doubles size! raw format but too heavy weight!
@@ -1384,6 +1385,8 @@ private:
 						//cmdEncodingArgs += "-pix_fmt yuv444p ";// 10secs = 300MB. doubles size! raw format but too heavy weight!
 					}
 #endif
+					//--
+
 					// TODO:
 					// add customzable fps:
 					cmdEncodingArgs += "-r 60 ";// BUG: not applying 60 fps ??

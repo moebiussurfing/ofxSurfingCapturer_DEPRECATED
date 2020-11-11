@@ -1,11 +1,9 @@
 <?xml version="1.0"?>
 <Capturer>
 	<Enable>1</Enable>
-	<Record>0</Record>
 	<Extra>
 		<Show_info>1</Show_info>
-		<Minimal>1</Minimal>
+		<Minimal>0</Minimal>
 		<Autoencode>1</Autoencode>
-		<Refresh_Section>0</Refresh_Section>
 	</Extra>
 </Capturer>
