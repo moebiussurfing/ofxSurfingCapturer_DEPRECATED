@@ -3,7 +3,6 @@
 //--------------------------------------------------------------
 void ofApp::setup() {
 	ofSetFrameRate(60);
-	gui.setup();
 
 	// scene
 	{
@@ -23,14 +22,21 @@ void ofApp::setup() {
 	// /Captures/Snapshots/ and /Captures/Stills/ will be located on there.
 	// This path can be customizable before call setup(), and should looks like:
 	//capturer.setPathRoot("F:\\openFrameworks\\addons\\ofxSurfingCapturer\\example-BasicStills\\bin\\data\\");
-	
+
 	// we don't need depth testing for this 2D scene
-	capturer.setDephEnabled(false); 
-    
-    capturer.setOutputFilename("Projector_1");
-    capturer.setup("captures/Captures_Projector_1/", OF_IMAGE_FORMAT_TIFF);
-    
-//    capturer.setup();
+	capturer.setDephEnabled(false);
+
+	// set to using CPU instead GPU when enconding video
+	//capturer.setFfpmegGpu(false);
+
+	//-
+
+	capturer.setOutputFilename("video_1");
+	capturer.setup("captures/test/", OF_IMAGE_FORMAT_TIFF);
+
+	//-
+
+	// capturer.setup();
 	// customizable using arguments: destination, ffmpeg.exe and IMAGE_FORMAT.
 	// default destination is bin/data/Captures. default image format is TIFF.
 
@@ -45,12 +51,17 @@ void ofApp::setup() {
 	//capturer.setFfpmegGpu(false); 
 	// Nvidia GPU HW accelerated is enabled by default. 
 	// disable if you have an AMD GPU or you prefer CPU encoding
-	
+
 	//capturer.setOverwriteVideoOut(false); 
 	// true by default. overwirtes output.mp4 file. 
 	// when setted to false will add timestamp to filename.
 
-	gui.add(capturer.bActive);
+	//-
+
+	// local gui
+	gui.setup();
+	gui.add(capturer.params);
+	capturer.refreshGui(gui);// refresh collapse sub menus
 }
 
 //--------------------------------------------------------------

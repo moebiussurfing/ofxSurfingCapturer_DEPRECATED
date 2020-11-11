@@ -3,10 +3,10 @@
 #include "ofMain.h"
 
 #include "ofxSurfing_CaptureWindowStills.h"
+
 #include "ofxGui.h"
 
 class ofApp : public ofBaseApp {
-	ofxPanel gui;
 
 public:
 	void setup();
@@ -15,11 +15,13 @@ public:
 	void keyPressed(ofKeyEventArgs &eventArgs);
 	void windowResized(int w, int h);
 
-	CaptureWindow capturer;
-
 	// scene
 	glm::vec2 pos;
 	int halfx, halfy;
 	float size;
 	float val;
+
+	CaptureWindow capturer;
+	
+	ofxPanel gui;
 };
