@@ -24,41 +24,41 @@ void ofApp::setup() {
 	//capturer.setPathRoot("F:\\openFrameworks\\addons\\ofxSurfingCapturer\\example-BasicStills\\bin\\data\\");
 
 	// we don't need depth testing for this 2D scene
-	capturer.setDephEnabled(false);
-
-	// set to using CPU instead GPU when enconding video
-	//capturer.setFfpmegGpu(false);
+	//capturer.setDephEnabled(false);
 
 	//-
 
 	capturer.setOutputFilename("video_1");
-	capturer.setup("captures/test/", OF_IMAGE_FORMAT_TIFF);
 
 	//-
 
+	capturer.setup("captures/test/", OF_IMAGE_FORMAT_TIFF);
 	// capturer.setup();
 	// customizable using arguments: destination, ffmpeg.exe and IMAGE_FORMAT.
 	// default destination is bin/data/Captures. default image format is TIFF.
 
-	//capturer.setActive(false); 
-	// make gui hidden/visible. visible by default.
+	//capturer.setOverwriteVideoOut(false); 
+	// true by default. overwrites output.mp4 file. 
+	// when setted to false will append timestamp to filename to allow multiple captures.
+
+	//-
+
+	// FFmpeg options
+
+	// set to using CPU instead default GPU (Nvidia) when enconding video
+	//capturer.setFfpmegGpu(false); 
+	// Nvidia GPU HW accelerated is enabled by default. 
+	// disable if you have an AMD GPU or you prefer CPU encoding
 
 	// customizable FFmpeg script:
 	//capturer.setFFmpegScript("-r 60 -c:v h264_nvenc -b:v 25M -crf 20 -preset slow");
 	// this is the same interal harcoded GPU script. 
 	// when you customize this script, take care of not duplicate things, re adding ffmpeg.exe, source, out...etc because they are already included !
 
-	//capturer.setFfpmegGpu(false); 
-	// Nvidia GPU HW accelerated is enabled by default. 
-	// disable if you have an AMD GPU or you prefer CPU encoding
-
-	//capturer.setOverwriteVideoOut(false); 
-	// true by default. overwirtes output.mp4 file. 
-	// when setted to false will add timestamp to filename.
-
 	//-
 
 	// local gui
+	// optional. not required bc you can use command keys
 	gui.setup();
 	gui.add(capturer.params);
 	capturer.refreshGui(gui);// refresh collapse sub menus

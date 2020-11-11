@@ -3,27 +3,16 @@
 #include "ofMain.h"
 
 //	TODO: 
+// + add custom section to gui too
 // + check/allow change window capture size without breaking the capturer. not it's posible before call setup()
 // + allow gif exporter: https://github.com/pierrep/ofxGifImage
 // + allow instagram ready export
 // + draw rectangle draggable border
 //
-//	NOTES:
+//
+//	FFmpef NOTES:
 // nice settings handling and binaries: we can copy things from here
 // https://github.com/tyhenry/ofxFFmpeg/blob/master/src/ofxFFmpeg.h
-//
-// Add - vf format = yuv420p(or the alias - pix_fmt yuv420p) as an output option
-// ffmpeg -framerate 30 -i input_%05d.png -vf format=yuv420p output.mp4
-// Otherwise ffmpeg will attempt to preserve as much color information as it can, but most players can only decode YUV 4:2 : 0.
-//
-// troubles with non black encoding:
-// ffmpeg
-//-i "InputVideo2700p.mp4"
-//- vf "scale=w=-2:h=1920:sws_flags=spline+accurate_rnd:in_range=tv:out_range=tv"
-//- c:v libx264
-//- colorspace bt709 - color_trc bt709 - color_primaries bt709 - color_range tv
-//- pix_fmt yuv420p
-//- an - f mp4 "OutputVideo1920p.mp4"
 // https://www.reddit.com/r/ffmpeg/comments/8t54bm/converting_yuvj420p_to_yuv420p_issues_with_black/
 
 
@@ -40,11 +29,11 @@
 #define ANTIALIAS_NUM_SAMPLES 16 // only used on depth mode
 
 // platforms
-#ifdef TARGET_OSX
+#ifdef TARGET_OSX// tested without AMD GPU
 #endif
 #ifdef TARGET_WIN32
 #endif
-//#ifdef TARGET_LINUX
+//#ifdef TARGET_LINUX// not tested
 //#endif
 
 class CaptureWindow : public ofBaseApp, public ofThread
@@ -69,7 +58,7 @@ private:
 
 	//--------------------------------------------------------------
 	void Changed_params(ofAbstractParameter &e) {
-		if (!bDisableCallbacks) 
+		if (!bDisableCallbacks)
 		{
 			std::string name = e.getName();
 			if (name != timer_str.getName())
@@ -385,7 +374,6 @@ public:
 		cap_Fbo.allocate(cap_Fbo_Settings);
 		cap_Fbo.begin();
 		ofClear(0, 255);
-		//ofClear(0);
 		cap_Fbo.end();
 
 		// TODO:
@@ -395,7 +383,6 @@ public:
 			blitFbo.allocate(cap_Fbo_Settings);
 			blitFbo.begin();
 			ofClear(0, 255);
-			//ofClear(0);
 			blitFbo.end();
 		}
 	}
@@ -486,16 +473,6 @@ public:
 	void draw() {// must draw the scene content to show
 		if (bActive)
 		{
-			//blitFbo.begin();
-			//{
-			//	ofClear(0, 255);
-			//	//ofClear(0);
-			//	cap_Fbo.draw(0, 0, cap_w, cap_h);
-			//}
-			//blitFbo.end();
-			//blitFbo.draw(0, 0);
-
-			// TODO:
 			// BUG: depth/antialias
 			if (bDepth3D)
 			{
@@ -611,7 +588,8 @@ public:
 					{
 						info += "> PRESS F8  TO MOUNT CAPTURER" + sp + "\n";
 						info += "> PRESS F10 TO TAKE SNAPSHOT\n";
-						if (bShowMinimal) info += "> PRESS Ctrl + m TO SET MINIMAL INFO " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
+						if (bShowMinimal) info += "> PRESS M TO SET MINIMAL INFO " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
+						//if (bShowMinimal) info += "> PRESS Ctrl + m TO SET MINIMAL INFO " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
 					}
 
 					// 2. mounted, recording or running ffmpeg script
@@ -848,6 +826,18 @@ public:
 			bool mod_ALT = eventArgs.hasModifier(OF_KEY_ALT);
 			bool mod_SHIFT = eventArgs.hasModifier(OF_KEY_SHIFT);
 
+
+
+			// toggle show minimal
+			if (key == 'M')// && mod_CONTROL)
+			{
+				//if (!mod_SHIFT && !mod_ALT && mod_CONTROL) 
+				{
+					setToggleShowMinimal();
+					ofLogNotice(__FUNCTION__) << "bShowMinimal: " << (bShowMinimal ? "ON" : "OFF");
+				}
+			}
+
 			//-
 
 			switch (key)
@@ -862,17 +852,16 @@ public:
 				setToggleVisibleInfo();
 				break;
 
-				// toggle show minimal
-			case 'm':
-			{
-				if (!mod_SHIFT && !mod_ALT && mod_CONTROL) {
-					setToggleShowMinimal();
-					ofLogNotice(__FUNCTION__) << "bShowMinimal: " << (bShowMinimal ? "ON" : "OFF");
-				}
-			}
-			break;
+				//	// toggle show minimal
+				//case 'm':
+				//{
+				//	if (!mod_SHIFT && !mod_ALT && mod_CONTROL) {
+				//		setToggleShowMinimal();
+				//		ofLogNotice(__FUNCTION__) << "bShowMinimal: " << (bShowMinimal ? "ON" : "OFF");
+				//	}
+				//}
 
-			// set Full HD
+				// set Full HD
 			case OF_KEY_F5:
 			{
 				ofSetWindowShape(1920, 1080);
@@ -1014,7 +1003,8 @@ private:
 
 		infoHelpKeys += "F10 : Capture Screenshot"; infoHelpKeys += "\n";
 		infoHelpKeys += "F11 : Run FFmpeg video Encoder"; infoHelpKeys += "\n";
-		infoHelpKeys += "Ctrl + m : Minimal Info set " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
+		infoHelpKeys += "M   : Minimal Info set " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
+		//infoHelpKeys += "Ctrl + m : Minimal Info set " + ofToString(!bShowMinimal ? "ON" : "OFF") + "\n";
 		infoHelpKeys += "Ctrl + Alt + BackSpace: Clear Stills"; infoHelpKeys += "\n";
 
 		if (!bShowMinimal)
@@ -1317,7 +1307,7 @@ private:
 					// 1. prepare source and basic settings: auto overwrite file, fps, size, stills source
 
 					cmd += ffmpeg + " ";
-					
+
 					cmd += "-y -f image2 ";
 					cmd += "-r 60 ";
 					cmd += "-i " + filesSrc + " ";
