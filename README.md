@@ -2,12 +2,12 @@ ofxSurfingCapturer
 ====================
 
 # Overview
-**ofxSurfingCapturer** is an **openFrameworks** addon to do *fast video capturing* but storing **still frames** to join to video with *FFmpeg*. It helps on all the capture workflow. 
+**ofxSurfingCapturer** is an **openFrameworks** addon to do *fast video capturing* but storing **still frames** to join to video with *FFmpeg* after capture finished. It helps on all the capture workflow. 
 
 Includes the main class:  
 
 **ofxSurfing_CaptureWindowStills.h**  
-It's much faster (in some machines) because captures still frames (.tif) using threading + FFmpeg video (.mp4) encoding using system command-line.  
+It's much faster (in some machines) because captures and compress still frames (.tif) using threading, and it makes the FFmpeg video (.mp4) encoding using system command-line after all: inisde the OF App or using your favourite external video encoder.  
 Based on: **ofxTextureRecorder**.  
 
 ## Screenshots
@@ -37,12 +37,8 @@ Uses ofxSurfing_CaptureWindowStills.h
 ![image](/readme_images/Capture5.PNG?raw=true "image")
 ![image](/readme_images/Capture6.PNG?raw=true "image")
 
-### 2. example-BasicVideo: realtime encoding
-Uses ofxSurfing_CaptureWindowFFMPEG.h  
-(with realtime capture and FFmpeg video encoding)  
-
 ## Features
-- **Faster** than other live-capture-to-video alternatives (bc "raw" still frames + encode).
+- **Faster** than other live-capture-to-video alternatives (bc "raw" still frames + post-encode after).
 - **GPU Hardware accelerated** (or CPU) video encoding. (Nvidia only yet) 
 - Selectable image format: *png*, *jpg*, ...etc. *tif* by default.  
 - **Key commands** to handle all the workflow:  
@@ -86,6 +82,7 @@ ofApp::draw(){
 	capturer.draw();
 
 	capturer.drawInfo();
+	//gui.draw();
 }
 ```
 
