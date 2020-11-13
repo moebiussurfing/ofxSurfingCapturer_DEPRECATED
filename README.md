@@ -40,7 +40,8 @@ Uses ofxSurfing_CaptureWindowStills.h
 ## Features
 - **Faster** than other live-capture-to-video alternatives (bc "raw" still frames + post-encode after).
 - **GPU Hardware accelerated** (or CPU) video encoding. (Nvidia only yet) 
-- Selectable image format: *png*, *jpg*, ...etc. *tif* by default.  
+- Selectable image format: *png*, *jpg*, ...etc. *tif* by default. 
+- Parameters to easy integrate on a GUI.   
 - **Key commands** to handle all the workflow:  
 1. **Mount** (F8)  
 2. **Record** (F9)  
