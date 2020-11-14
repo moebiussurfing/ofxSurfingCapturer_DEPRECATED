@@ -6,11 +6,11 @@
 // + add custom section to gui too
 // + check/allow change window capture size without breaking the capturer. not it's posible before call setup()
 // + allow gif exporter: https://github.com/pierrep/ofxGifImage
-// + allow instagram ready export
-// + draw rectangle draggable border
+// + allow instagram-ready export.
+// + draw rectangle draggable border, to select a section manually
+// * customizable frame rate. now hardcoded to 60 fps
 //
-//
-//	FFmpef NOTES:
+// FFmpef NOTES:
 // nice settings handling and binaries: we can copy things from here
 // https://github.com/tyhenry/ofxFFmpeg/blob/master/src/ofxFFmpeg.h
 // https://www.reddit.com/r/ffmpeg/comments/8t54bm/converting_yuvj420p_to_yuv420p_issues_with_black/
@@ -28,12 +28,19 @@
 
 #define ANTIALIAS_NUM_SAMPLES 16 // only used on depth mode
 
+#define TEST_CONSOLE_KILL_PROCESS
+// NOTE:
+// sometimes it hangs after encoding... trying to avoid
+// in general, after finish an encoding, your video player will be opened with your video. in my case VLC
+// then it's recommended to close the videoplayer before start a new capture.
+// in some way, to release the thread or something realated (?)
+
 // platforms
 #ifdef TARGET_OSX// tested without AMD GPU
 #endif
 #ifdef TARGET_WIN32
 #endif
-//#ifdef TARGET_LINUX// not tested
+//#ifdef TARGET_LINUX// not tested. I don't have linux sorry.
 //#endif
 
 class CaptureWindow : public ofBaseApp, public ofThread
@@ -42,7 +49,7 @@ class CaptureWindow : public ofBaseApp, public ofThread
 public:
 	// public to integrate into your ofApp gui
 	ofParameterGroup params{ "Capturer" };
-	ofParameter<bool> bActive{ "Enable", false };
+	ofParameter<bool> bEnable{ "Enable", false };
 	ofParameter<bool> bRecord{ "Record", false };
 private:
 	ofParameterGroup params_extra{ "Extra" };
@@ -50,6 +57,15 @@ private:
 	ofParameter<bool> bShowMinimal{ "Minimal", true };
 	ofParameter<bool> bRefresh{ "Refresh Section", false };
 	ofParameter<bool> bAutoencode{ "Autoencode", false };
+	
+	ofParameterGroup params_CustomSection{ "Custom Section" };
+	ofParameter<bool> isSectionCustomized{ "Customized", false };
+	//ofParameter<ofRectangle> rectSection;
+	ofParameter<glm::vec2> rectSectionPos{ "Pos", glm::vec2(0),glm::vec2(0), glm::vec2(1920, 1200) };
+	ofParameter<glm::vec2> rectSectionShape{ "shape", glm::vec2(1920,1080),glm::vec2(0), glm::vec2(1920, 1200) };
+
+	//bool isSectionCustomized = false;
+
 	ofParameter<std::string> timer_str{ "Time","00:00" };
 
 	std::string path_Settings = "WindowCapturer.xml";
@@ -71,7 +87,7 @@ private:
 
 			else if (name == bRecord.getName())
 			{
-				if (bActive.get())
+				if (bEnable.get())
 				{
 					if (bRecord.get())
 					{
@@ -90,16 +106,32 @@ private:
 				}
 			}
 
+			else if (name == bEnable.getName())
+			{
+				if (bEnable) bIsMounted = true;
+				else bIsMounted = false;
+			}
+
+			// TODO:
+			// custom section
 			else if (name == bRefresh.getName() && bRefresh)
 			{
 				bRefresh = false;
-				buildAllocateFbo();
-			}
 
-			else if (name == bActive.getName())
+				if (isSectionCustomized) {
+					cap_w = rectSection.getWidth();
+					cap_h = rectSection.getHeight();
+				}
+				else {
+					cap_w = ofGetWidth();
+					cap_h = ofGetHeight();
+				}
+				buildAllocateFbo();
+				//buildRecorder();
+			}
+			else if (name == rectSectionPos.getName() || name == rectSectionShape.getName() )
 			{
-				if (bActive) bIsMounted = true;
-				else bIsMounted = false;
+				rectSection.set(rectSectionPos.get().x, rectSectionPos.get().y, rectSectionShape.get().x, rectSectionShape.get().y);
 			}
 		}
 	}
@@ -128,8 +160,8 @@ public:
 	void setMounted(bool b) {
 		bIsMounted = b;
 	}
-	bool isActive() {
-		return bActive.get();
+	bool isEnabled() {
+		return bEnable.get();
 	}
 	//bool isVisible() {
 	//	return bShowInfo.get();
@@ -164,7 +196,6 @@ public:
 	bool isPlayingPLayer = false;
 
 	ofRectangle rectSection;// customize capture section. TODO: hardcoded to 0,0 position yet!
-	bool isSectionCustomized = false;
 
 private:
 	ofTrueTypeFont font;
@@ -226,6 +257,8 @@ public:
 		auto &g1 = _group.getGroup(params.getName());
 		auto &g2 = g1.getGroup(params_extra.getName());
 		g2.minimize();
+		auto &g3 = g2.getGroup(params_CustomSection.getName());
+		g3.minimize();
 	}
 	//--------------------------------------------------------------
 	void refreshGui(ofxPanel & _gui)
@@ -233,6 +266,8 @@ public:
 		auto &g1 = _gui.getGroup(params.getName());
 		auto &g2 = g1.getGroup(params_extra.getName());
 		g2.minimize();
+		auto &g3 = g2.getGroup(params_CustomSection.getName());
+		g3.minimize();
 	}
 
 	//--------------------------------------------------------------
@@ -260,13 +295,20 @@ public:
 
 		fileOutName = "output";// default filename will be "output.mp4" or with timestamps if enabled
 
-		params.add(bActive);
-		params.add(bRecord);
 		params.add(timer_str);
+		params.add(bEnable);
+		params.add(bRecord);
+
 		params_extra.add(bShowInfo);
 		params_extra.add(bShowMinimal);
 		params_extra.add(bAutoencode);
-		params_extra.add(bRefresh);
+		params_CustomSection.add(isSectionCustomized);
+		params_CustomSection.add(bRefresh);
+		params_CustomSection.add(rectSectionPos);
+		params_CustomSection.add(rectSectionShape);
+		//params_CustomSection.add(rectSection);
+		params_extra.add(params_CustomSection);
+
 		params.add(params_extra);
 
 		timer_str.setSerializable(false);
@@ -274,6 +316,9 @@ public:
 		bRecord.setSerializable(false);
 
 		ofAddListener(params.parameterChangedE(), this, &CaptureWindow::Changed_params);
+
+		//rectSection.setName("Section");
+		rectSection.set(rectSectionPos.get().x, rectSectionPos.get().y, rectSectionShape.get().x, rectSectionShape.get().y);
 
 		// TODO:
 		_fpsTar = 60;
@@ -404,7 +449,7 @@ public:
 		settings.numThreads = MODE_LESS_THREADS;
 #endif
 		// TODO:
-		//settings.maxMemoryUsage = 9000000000;
+		settings.maxMemoryUsage = 9000000000;
 
 		// NOTE: about my ofxTextureRecorder fork
 		// this setPath is not required on my customized fork of ofxTextureRecorder
@@ -429,16 +474,20 @@ public:
 	void setCustomizeSection(ofRectangle r) {
 		rectSection = r;
 		isSectionCustomized = true;
+		
+		rectSectionPos = glm::vec2( rectSection.getX(), rectSection.getY());
+		rectSectionShape = glm::vec2( rectSection.getWidth(), rectSection.getHeight());
 
 		cap_w = rectSection.getWidth();
 		cap_h = rectSection.getHeight();
+		
 		buildAllocateFbo();
 	}
 
 public:
 	//--------------------------------------------------------------
 	void begin() {// call before draw the scene to record
-		//if (bActive)
+		//if (bEnable)
 		{
 			// updates
 			if (bIsRecording)
@@ -453,13 +502,13 @@ public:
 
 	//--------------------------------------------------------------
 	void end() {// call after draw the scene to record
-		//if (bActive)
+		//if (bEnable)
 		{
 			cap_Fbo.end();
 
 			//-
 
-			if (bActive && bIsMounted)
+			if (bEnable && bIsMounted)
 			{
 				if (bIsRecording && ofGetFrameNum() > 0)
 				{
@@ -471,7 +520,7 @@ public:
 
 	//--------------------------------------------------------------
 	void draw() {// must draw the scene content to show
-		if (bActive)
+		if (bEnable)
 		{
 			// BUG: depth/antialias
 			if (bDepth3D)
@@ -787,14 +836,14 @@ public:
 
 	//--------------------------------------------------------------
 	void setActive(bool b) {
-		bActive = b;
-		//bShowInfo = bActive;
+		bEnable = b;
+		//bShowInfo = bEnable;
 	}
 
 	//--------------------------------------------------------------
 	void setToggleActive() {
-		bActive = !bActive;
-		//bShowInfo = bActive;
+		bEnable = !bEnable;
+		//bShowInfo = bEnable;
 	}
 
 public:
@@ -816,7 +865,7 @@ private:
 public:
 	//--------------------------------------------------------------
 	void keyPressed(ofKeyEventArgs &eventArgs) {///to received short keys control commands
-		if (bActive)
+		if (bEnable)
 		{
 			const int key = eventArgs.key;
 
@@ -916,7 +965,8 @@ public:
 			}
 			break;
 
-			// take screenshot
+			// take screenshot 
+			// (not using ofxTextureRecorder and multi thread like on sequence stills capture)
 			case OF_KEY_F10:
 			{
 				std::string _fileName = fileOutName + "__" + ofGetTimestampString() + ".png";
@@ -969,7 +1019,7 @@ public:
 
 	//--------------------------------------------------------------
 	void windowResized(int w, int h) {// must be called to resize the fbo and video resolution
-		if (!isSectionCustomized && bActive) // we don't want to resize the canvas when  custom section is enabled
+		if (!isSectionCustomized)// && bEnable) // we don't want to resize the canvas when  custom section is enabled
 		{
 			cap_w = w;
 			cap_h = h;
@@ -977,7 +1027,7 @@ public:
 		}
 
 		// TODO: trying to allow resize..
-		// this brakes the capturer...
+		// this breakes the capturer...
 		//buildRecorder();
 	}
 
@@ -1098,6 +1148,7 @@ public:
 		}
 		else
 		{
+#ifdef TEST_CONSOLE_KILL_PROCESS
 			ofLogWarning(__FUNCTION__) << "Trying to force skip FFmpeg batch encoding: Can't be recording or already encoding";
 
 			// TODO: BUG:
@@ -1125,6 +1176,7 @@ public:
 			someCmd << "say Hello";
 #endif
 			cout << "> DONE !" << endl;
+#endif
 		}
 
 		if (amountStills == 0) {
@@ -1156,12 +1208,14 @@ public:
 #endif
 
 #ifdef TARGET_WIN32
-		pathFolderCaptures = path + "\\";
+		pathFolderCaptures = path;
+		//pathFolderCaptures = path + "\\";
 		pathFolderStills = pathFolderCaptures + "Stills\\";
 		pathFolderSnapshots = pathFolderCaptures + "Snapshots\\";
 #endif
 #ifdef TARGET_OSX
-		pathFolderCaptures = path + "/";
+		pathFolderCaptures = path;
+		//pathFolderCaptures = path + "/";
 		pathFolderStills = pathFolderCaptures + "Stills/";
 		pathFolderSnapshots = pathFolderCaptures + "Snapshots/";
 #endif
@@ -1192,7 +1246,7 @@ private:
 	// join all stills to a video file
 	//--------------------------------------------------------------
 	void threadedFunction() {
-		if (bActive) {
+		if (bEnable) {
 			ofLogWarning(__FUNCTION__) << endl;
 
 			cout << "--------------------------------------------------------------" << endl;
