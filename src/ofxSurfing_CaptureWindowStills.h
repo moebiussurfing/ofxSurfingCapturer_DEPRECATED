@@ -379,15 +379,25 @@ public:
 			// but not mandatory if you join the stills using another external software.
 			ofFile file;
 			std::string _pathFfmpeg;
+            
 #ifdef TARGET_WIN32
 			ffmpegNameBinary = "ffmpeg.exe";
 #endif
 #ifdef TARGET_OSX
 			ffmpegNameBinary = "ffmpeg";
 #endif
+            
+#ifdef TARGET_WIN32
 			_pathFfmpeg = pathRoot + ffmpegNameBinary;
-			bFfmpegLocated = file.doesFileExist(_pathFfmpeg, true);
-			if (bFfmpegLocated) ofLogWarning(__FUNCTION__) << "Located: " + ffmpegNameBinary + " into " << _pathFfmpeg;
+            bFfmpegLocated = file.doesFileExist(_pathFfmpeg, true);//win
+#endif
+            
+            #ifdef TARGET_OSX
+            _pathFfmpeg = ffmpegNameBinary;
+            bFfmpegLocated = ofFile::doesFileExist(ofToDataPath( _pathFfmpeg, true ), false);//macOS
+            #endif
+            
+            if (bFfmpegLocated) ofLogWarning(__FUNCTION__) << "Located: " + ffmpegNameBinary + " into " << _pathFfmpeg;
 			else ofLogError(__FUNCTION__) << "Missing required binary file " + ffmpegNameBinary + " into " << _pathFfmpeg << " !";
 
 			// stills folder
@@ -679,7 +689,7 @@ public:
 						}
 						else if (bIsMounted || isEncoding)// mounted or running ffmpeg script
 						{
-							if ((!bFfmpegLocated) && ofGetFrameNum() % 60 < 20) info += "> ALERT! Missing FFmpeg.exe...";
+							if ((!bFfmpegLocated) && ofGetFrameNum() % 60 < 20) info += "> ALERT! Missing "+ffmpegNameBinary+"...";
 							info += "\n";
 
 							if (isThreadRunning()) {
@@ -1265,12 +1275,24 @@ private:
 				cout << "> Starting join all stills (xxxxx.tif) to a video file (.mp4)...";
 
 				pathAppData = pathRoot;
-
-				ffmpeg = pathAppData + ffmpegNameBinary;
+                
+#ifdef TARGET_WIN32
+                               ffmpeg = pathAppData + ffmpegNameBinary;
+#endif
+#ifdef TARGET_OSX
+                ffmpeg = ofToDataPath( ffmpegNameBinary, true );
+#endif
 
 				// input files
-				pathDest = pathAppData + pathFolderCaptures;
-				filesSrc = pathAppData + pathFolderStills + "%05d.tif"; // data/stills/%05d.tif
+#ifdef TARGET_WIN32
+                pathDest = pathAppData + pathFolderCaptures;
+                filesSrc = pathAppData + pathFolderStills + "%05d.tif"; // data/stills/%05d.tif
+#endif
+#ifdef TARGET_OSX
+                pathDest = ofToDataPath( pathAppData + pathFolderCaptures, true );
+                filesSrc = ofToDataPath( pathAppData + pathFolderStills + "%05d.tif", true ); // data/stills/%05d.tif
+#endif
+
 
 				// output video file
 				if (bOverwriteOutVideo) nameDest = fileOutName + ".mp4"; // "output.mp4";
@@ -1482,7 +1504,7 @@ private:
 				cout << "\t'is not recognized as an internal or external command, operable program or batch file.'" << endl;
 				cout << "> Then probably you need to set your ofApp.exe settings to run as Administrator:" << endl;
 				cout << "> Use Windows File Explorer file properties / Change settings for all users / compatibility." << endl;
-				cout << "> This is to allow run ffmpeg.exe and access to files from here!" << endl;
+				cout << "> This is to allow run "+ffmpegNameBinary+" and access to files from here!" << endl;
 
 				//-
 
