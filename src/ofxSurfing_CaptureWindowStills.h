@@ -458,8 +458,8 @@ public:
 #ifndef MODE_DEFAULT_THREADS 
 		settings.numThreads = MODE_LESS_THREADS;
 #endif
-		// TODO:
-		settings.maxMemoryUsage = 9000000000;
+		//// TODO:
+		//settings.maxMemoryUsage = 9000000000;
 
 		// NOTE: about my ofxTextureRecorder fork
 		// this setPath is not required on my customized fork of ofxTextureRecorder
