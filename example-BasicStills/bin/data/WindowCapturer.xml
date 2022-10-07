@@ -5,5 +5,10 @@
 		<Show_info>1</Show_info>
 		<Minimal>0</Minimal>
 		<Autoencode>1</Autoencode>
+		<Custom_Section>
+			<Customized>0</Customized>
+			<Pos>0, 0</Pos>
+			<shape>1920, 1080</shape>
+		</Custom_Section>
 	</Extra>
 </Capturer>
