@@ -839,8 +839,8 @@ public:
 		isPlayingPLayer = false;
 
 		// we are running the systems commands
-		// in a sperate thread so that it does
-		// not block the drawing
+		// in a separated thread so it does
+		// not block the drawing!
 		startThread();
 	}
 
@@ -1004,7 +1004,7 @@ public:
 			}
 			break;
 
-			// join stills to video after capture
+			// marge stills to video after capture
 			case OF_KEY_F11:
 			{
 				startEncodeVideo();
